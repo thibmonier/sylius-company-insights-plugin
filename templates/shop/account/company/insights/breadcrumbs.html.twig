@@ -1,0 +1,12 @@
+{% from '@SyliusShop/shared/breadcrumbs.html.twig' import breadcrumbs as breadcrumbs %}
+
+{% set items = [
+    { label: 'sylius.ui.home'|trans, path: path('sylius_shop_homepage') },
+    { label: 'sylius.ui.my_account'|trans, path: path('sylius_shop_account_dashboard') },
+    { label: 'tmonier_company_accounts.ui.my_company'|trans, path: path('tmonier_company_accounts_shop_company_show') },
+    { label: 'tmonier_company_insights.ui.title'|trans, active: true },
+] %}
+
+<div class="col-12">
+    {{ breadcrumbs(items) }}
+</div>

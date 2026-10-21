@@ -1,0 +1,23 @@
+{#
+ # Variation of an indicator against the previous period. Never relies on the colour alone: an arrow
+ # and a sentence say it too. Context: indicator, previous (the previous Period).
+ #}
+{% set variation = indicator.variation %}
+{% if variation.percent is null %}
+    <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-variation', 'unknown') }}>{{ 'tmonier_company_insights.variation.unknown'|trans }}</p>
+{% else %}
+    {% set formatted = (variation.percent / 100)|format_percent_number({min_fraction_digit: 1, max_fraction_digit: 1}) %}
+    <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-variation', variation.trend.value) }}>
+        {% if variation.trend.value == 'up' %}
+            <span class="fw-bold text-success-emphasis"><span aria-hidden="true">&#9650;</span> +{{ formatted }}</span>
+            <span class="visually-hidden">{{ 'tmonier_company_insights.variation.up'|trans }}</span>
+        {% elseif variation.trend.value == 'down' %}
+            <span class="fw-bold text-danger-emphasis"><span aria-hidden="true">&#9660;</span> {{ formatted }}</span>
+            <span class="visually-hidden">{{ 'tmonier_company_insights.variation.down'|trans }}</span>
+        {% else %}
+            <span class="fw-bold"><span aria-hidden="true">&#9654;</span> {{ formatted }}</span>
+            <span class="visually-hidden">{{ 'tmonier_company_insights.variation.flat'|trans }}</span>
+        {% endif %}
+        <span>{{ 'tmonier_company_insights.variation.versus'|trans({'%from%': previous.from|format_date('medium'), '%to%': previous.lastDay|format_date('medium')}) }}</span>
+    </p>
+{% endif %}

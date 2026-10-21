@@ -1,0 +1,10 @@
+{# Sort of the products. Context: sorts, sort, route, parameters (those that stay when the sort changes). #}
+<nav aria-label="{{ 'tmonier_company_insights.ranking.sort_selector'|trans }}" class="mb-3">
+    <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-sorts') }}>
+        {% for choice in sorts %}
+            <li class="nav-item">
+                <a class="nav-link {{ choice == sort ? 'active' }}" href="{{ path(route, parameters|merge({sort: choice.value})) }}" {% if choice == sort %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-sort', choice.value) }}>{{ choice.label|trans }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</nav>

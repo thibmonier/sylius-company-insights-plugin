@@ -1,0 +1,61 @@
+{#
+ # Categories: the table is the reference (it is what assistive technologies read); the donut is a
+ # progressive enhancement drawn from the data attributes by the Stimulus controller of the plugin.
+ # Context: ranking (Ranking of CategoryRow), locale, summary (true on the dashboard: the donut
+ # and an "other categories" row that completes the 100 %).
+ #}
+{% set names = [] %}
+{% set values = [] %}
+{% set shares = [] %}
+{% for row in ranking.rows %}
+    {% set names = names|merge([row.name ?? row.code ?? 'tmonier_company_insights.ranking.categories.uncategorized'|trans]) %}
+    {% set values = values|merge([row.spend / 100]) %}
+    {% set shares = shares|merge([ranking.shares[loop.index0]]) %}
+{% endfor %}
+{% set others = summary and ranking.hasMore %}
+{% if others %}
+    {% set names = names|merge(['tmonier_company_insights.ranking.categories.others'|trans]) %}
+    {% set values = values|merge([ranking.othersSpend / 100]) %}
+    {% set shares = shares|merge([ranking.othersShare]) %}
+{% endif %}
+
+{% if summary %}
+    {# The table below carries the same figures: the drawing is hidden from assistive technologies. #}
+    <div aria-hidden="true" class="mb-3"
+         data-controller="tmonier-insights-donut"
+         data-tmonier-insights-donut-labels-value="{{ names|json_encode|e('html_attr') }}"
+         data-tmonier-insights-donut-values-value="{{ values|json_encode|e('html_attr') }}"
+         data-tmonier-insights-donut-shares-value="{{ shares|json_encode|e('html_attr') }}"
+         data-tmonier-insights-donut-currency-value="{{ ranking.currencyCode }}"
+         data-tmonier-insights-donut-locale-value="{{ locale|replace({'_': '-'}) }}"
+         {{ sylius_test_html_attribute('tmonier-insights-donut') }}></div>
+{% endif %}
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'categories') }}>
+        <caption class="caption-top">{{ 'tmonier_company_insights.ranking.categories.caption'|trans({'%currency%': ranking.currencyCode}) }}</caption>
+        <thead>
+            <tr>
+                <th scope="col">{{ 'tmonier_company_insights.ranking.column.category'|trans }}</th>
+                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
+                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in ranking.rows %}
+                <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
+                    <th scope="row">{{ names[loop.index0] }}</th>
+                    <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                    <td class="text-end" data-value="{{ ranking.shares[loop.index0] }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.shares[loop.index0] / 100)|format_percent_number }}</td>
+                </tr>
+            {% endfor %}
+            {% if others %}
+                <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-others') }}>
+                    <th scope="row">{{ 'tmonier_company_insights.ranking.categories.others'|trans }}</th>
+                    <td class="text-end">{{ ranking.othersSpend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                    <td class="text-end" data-value="{{ ranking.othersShare }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.othersShare / 100)|format_percent_number }}</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

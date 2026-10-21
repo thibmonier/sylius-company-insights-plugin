@@ -1,0 +1,6 @@
+{% extends '@SyliusShop/account/common/index.html.twig' %}
+
+{% set prefixes = ['tmonier_company_insights_shop.account.company.insights_forbidden'] %}
+{% set attrs = { company, member, page: 'insights', active_tab: 'insights' } %}
+
+{% block title %}{{ 'tmonier_company_insights.ui.title'|trans }} | {{ parent() }}{% endblock %}
