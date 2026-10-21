@@ -11,6 +11,10 @@ use Tmonier\SyliusCompanyInsightsPlugin\Indicators\DashboardProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\DbalMonthlyPurchaseStatistics;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyPurchasesProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\PeriodResolver;
+use Tmonier\SyliusCompanyInsightsPlugin\Ranking\DbalBuyerRanking;
+use Tmonier\SyliusCompanyInsightsPlugin\Ranking\DbalCategoryRanking;
+use Tmonier\SyliusCompanyInsightsPlugin\Ranking\DbalProductRanking;
+use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingsProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Security\InsightsVoter;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\DbalPurchaseStatistics;
@@ -48,6 +52,24 @@ return static function (ContainerConfigurator $container): void {
             service('clock'),
             service('tmonier_company_insights.statistics.monthly'),
             param('tmonier_company_insights.timezone'),
+        ])
+    ;
+
+    foreach (['buyers' => DbalBuyerRanking::class, 'products' => DbalProductRanking::class, 'categories' => DbalCategoryRanking::class] as $name => $class) {
+        $services->set('tmonier_company_insights.ranking.' . $name, $class)
+            ->args([
+                service('doctrine.dbal.default_connection'),
+                service('tmonier_company_insights.sql.counted_order'),
+                param('tmonier_company_insights.timezone'),
+            ])
+        ;
+    }
+
+    $services->set('tmonier_company_insights.rankings_provider', RankingsProvider::class)
+        ->args([
+            service('tmonier_company_insights.ranking.buyers'),
+            service('tmonier_company_insights.ranking.products'),
+            service('tmonier_company_insights.ranking.categories'),
         ])
     ;
 

@@ -25,6 +25,14 @@ final readonly class CountedOrderSql
         + (SELECT COALESCE(SUM(a.amount), 0) FROM sylius_adjustment a INNER JOIN sylius_shipment s ON a.shipment_id = s.id WHERE a.type = 'tax' AND s.order_id = o.id)
         SQL;
 
+    /** The lines of the orders, to join after {@see self::FROM}. */
+    public const LINES = 'INNER JOIN sylius_order_item i ON i.order_id = o.id';
+
+    private const TAX_OF_LINE = <<<'SQL'
+        (SELECT COALESCE(SUM(a.amount), 0) FROM sylius_adjustment a WHERE a.type = 'tax' AND a.order_item_id = i.id)
+        + (SELECT COALESCE(SUM(a.amount), 0) FROM sylius_adjustment a INNER JOIN sylius_order_item_unit u ON a.order_item_unit_id = u.id WHERE a.type = 'tax' AND u.order_item_id = i.id)
+        SQL;
+
     private const ORDERS_OF_COMPANY = "co.company_id = :company AND o.checkout_state = 'completed' AND o.state <> 'cancelled'";
 
     public function __construct(private PendingOrderConditionInterface $pendingOrderCondition)
@@ -35,6 +43,12 @@ final readonly class CountedOrderSql
     public function netTotal(): string
     {
         return 'o.total - (' . self::TAX_OF_ORDER . ')';
+    }
+
+    /** The tax-exclusive total of a line (alias `i`) after the discounts of the line, which the total of the line already holds. */
+    public function lineNetTotal(): string
+    {
+        return 'i.total - (' . self::TAX_OF_LINE . ')';
     }
 
     /** Completed, not cancelled and not waiting for approval; the period is up to the caller. */

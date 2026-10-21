@@ -259,15 +259,35 @@ final class TestCatalog
         return $this->entityManager()->getConnection();
     }
 
-    private function addItem(OrderInterface $order): void
+    private function newOrder(CustomerInterface $customer, string $completedAt, string $currency, string $state): OrderInterface
+    {
+        /** @var FactoryInterface<OrderInterface> $orderFactory */
+        $orderFactory = $this->container->get('sylius.factory.order');
+        $order = $orderFactory->createNew();
+        $order->setChannel($this->channel());
+        $order->setLocaleCode($this->localeCode());
+        $order->setCurrencyCode($currency);
+        $order->setCustomerWithAuthorization($customer);
+        $order->setTokenValue(bin2hex(random_bytes(10)));
+        $order->setNumber(sprintf('INS-%s-%03d', $this->suffix, ++$this->sequence));
+        $order->setState($state);
+        $order->setCheckoutState(OrderCheckoutStates::STATE_COMPLETED);
+        $order->setPaymentState('awaiting_payment');
+        $order->setShippingState('ready');
+        $order->setCheckoutCompletedAt(new \DateTime($completedAt));
+
+        return $order;
+    }
+
+    private function addItem(OrderInterface $order, ProductVariantInterface $variant, int $quantity): void
     {
         /** @var FactoryInterface<OrderItemInterface> $itemFactory */
         $itemFactory = $this->container->get('sylius.factory.order_item');
         $item = $itemFactory->createNew();
-        $item->setVariant($this->variant());
+        $item->setVariant($variant);
         /** @var OrderItemQuantityModifierInterface $quantityModifier */
         $quantityModifier = $this->container->get('sylius.modifier.order_item_quantity');
-        $quantityModifier->modify($item, 1);
+        $quantityModifier->modify($item, $quantity);
         /** @var OrderModifierInterface $orderModifier */
         $orderModifier = $this->container->get('sylius.modifier.order');
         $orderModifier->addToOrder($order, $item);

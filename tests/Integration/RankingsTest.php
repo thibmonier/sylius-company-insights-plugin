@@ -48,9 +48,11 @@ final class RankingsTest extends KernelTestCase
         $claire = $this->catalog()->customer('claire', 'Claire', 'Martin');
         $old = $this->catalog()->customer('old', 'Olivier', 'Ancien');
         $this->catalog()->member($company, $claire);
-        $this->catalog()->member($company, $old, enabled: false);
+        $oldMember = $this->catalog()->member($company, $old);
         $this->catalog()->order($claire, 100_000, '2026-10-02 10:00:00');
         $this->catalog()->order($old, 300_000, '2026-10-03 10:00:00');
+        $oldMember->setEnabled(false);
+        $this->catalog()->entityManager()->flush();
 
         $rows = $this->buyers($company)->rows;
 
@@ -202,16 +204,19 @@ final class RankingsTest extends KernelTestCase
         self::assertSame(1, $this->buyers($company)->pages());
     }
 
+    /** @return Ranking<BuyerRow> */
     private function buyers(CompanyInterface $company, PageRequest $page = new PageRequest(1, 10)): Ranking
     {
         return $this->provider()->buyers($this->scope($company), $page);
     }
 
+    /** @return Ranking<ProductRow> */
     private function products(CompanyInterface $company, ProductSort $sort = ProductSort::Spend, string $currency = 'EUR', string $locale = 'en_US'): Ranking
     {
         return $this->provider()->products($this->scope($company, $currency, $locale), $sort, new PageRequest(1, 10));
     }
 
+    /** @return Ranking<CategoryRow> */
     private function categories(CompanyInterface $company): Ranking
     {
         return $this->provider()->categories($this->scope($company), new PageRequest(1, 10));
