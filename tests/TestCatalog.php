@@ -203,6 +203,7 @@ final class TestCatalog
             $column => $id,
             'type' => AdjustmentInterface::TAX_ADJUSTMENT,
             'label' => 'VAT',
+            'details' => '[]',
             'amount' => $amount,
             'is_neutral' => 1,
             'is_locked' => 0,
@@ -218,6 +219,7 @@ final class TestCatalog
             'method_id' => $method,
             'order_id' => $orderId,
             'state' => 'ready',
+            'adjustments_total' => 0,
             'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ]);
 
