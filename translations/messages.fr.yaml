@@ -23,7 +23,7 @@ tmonier_company_insights:
         active_buyers: 'Acheteurs actifs'
         pending: 'En attente d''approbation'
     variation:
-        versus: 'par rapport au %from% au %to%'
+        versus: 'par rapport à la période précédente (du %from% au %to%)'
         unknown: 'Pas de comparaison : rien sur la période précédente.'
         up: 'Hausse'
         down: 'Baisse'
