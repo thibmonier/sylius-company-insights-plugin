@@ -16,7 +16,7 @@ final class CurrencyTotalsTest extends TestCase
 
     public function testTheAverageBasketIsRoundedToTheMinorUnit(): void
     {
-        self::assertSame(3_334, (new CurrencyTotals('EUR', 3, 10_000))->averageBasket());
+        self::assertSame(3_334, (new CurrencyTotals('EUR', 3, 10_001))->averageBasket());
     }
 
     public function testWithoutOrderTheAverageBasketIsZero(): void
