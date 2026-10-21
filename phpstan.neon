@@ -1,0 +1,16 @@
+parameters:
+    level: max
+    reportUnmatchedIgnoredErrors: false
+    paths:
+        - src
+        - tests/Functional
+        - tests/Unit
+        - tests/Integration
+
+    excludePaths:
+        # Test dependencies
+        - 'tests/TestApplication/src/**.php'
+
+    ignoreErrors:
+        -
+            identifier: missingType.iterableValue

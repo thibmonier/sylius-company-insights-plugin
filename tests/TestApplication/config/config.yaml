@@ -1,0 +1,18 @@
+imports:
+    - { resource: "@TmonierSyliusAdminOrderCreationPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusWebhookOutboxPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusPurchaseApprovalPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusCompanyInsightsPlugin/config/config.yaml" }
+    - { resource: "dbal_savepoints.php" }
+
+# Demo company (dev database): admin, buyer and approver of Acme Industries
+# (admin@acme-industries.example.com / sylius), orders of its members.
+sylius_fixtures:
+    suites:
+        default:
+            fixtures:
+                tmonier_company_accounts:
+                    priority: -100
+                    options:
+                        orders_per_member: 2
