@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tmonier\SyliusCompanyInsightsPlugin\Monthly;
 
 use Doctrine\DBAL\Connection;
-use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Webmozart\Assert\Assert;
 

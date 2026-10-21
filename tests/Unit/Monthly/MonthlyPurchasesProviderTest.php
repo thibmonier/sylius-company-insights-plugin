@@ -51,7 +51,7 @@ final class MonthlyPurchasesProviderTest extends TestCase
         self::assertSame([4, 12_000], [$points[5]->ordersCount, $points[5]->spend]);
         self::assertSame([1, 5_000], [$points[11]->ordersCount, $points[11]->spend]);
         self::assertSame([false, true], [$points[10]->inProgress, $points[11]->inProgress]);
-        self::assertSame(array_fill(0, 11, false), array_map(static fn ($point): bool => $point->inProgress, \array_slice($points, 0, 11)));
+        self::assertSame(array_fill(0, 11, false), array_map(static fn (\Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyPoint $point): bool => $point->inProgress, \array_slice($points, 0, 11)));
     }
 
     public function testThereIsOneSeriesPerCurrencyAndNeverATotalMixingThem(): void

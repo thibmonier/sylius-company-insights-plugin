@@ -13,7 +13,14 @@ Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmon
   - panier moyen HT ;
   - acheteurs actifs (clients ayant passé au moins une commande) ;
   - commandes en attente d'approbation (nombre et montant), affichées à part et non comptées dans la dépense.
-- **Périodes** : 30 derniers jours, trimestre en cours, 12 derniers mois (par défaut), année en cours. La période figure dans le titre et dans l'URL (`?period=current_quarter`). Le trimestre et l'année en cours sont comparés aux mêmes jours écoulés du trimestre et de l'année précédents.
+- **Périodes** : 30 derniers jours, trimestre en cours, 12 derniers mois (par défaut : le mois civil en cours et les 11 précédents), année en cours. La période figure dans le titre et dans l'URL (`?period=current_quarter`). Le trimestre et l'année en cours sont comparés aux mêmes jours écoulés du trimestre et de l'année précédents.
+- **Achats par mois** : graphique en barres de la dépense des 12 derniers mois à côté des mêmes mois de l'année précédente. Une bascule (`?metric=amount|orders`, liste blanche) affiche le nombre de commandes au lieu du montant.
+  - Les mois sans commande sont à zéro, jamais des trous ; le mois en cours est marqué « en cours » et n'est pas un mois complet.
+  - Les mois suivent un fuseau horaire : celui de PHP par défaut, ou le paramètre `tmonier_company_insights.timezone` (par exemple `Europe/Paris` ; les canaux Sylius n'ont pas de fuseau propre). Une commande passée le 31 à 23 h 30 compte dans le bon mois, heure d'été comprise.
+  - Une série par devise, aucune conversion et aucun total qui mélange les devises.
+  - Les 12 barres totalisent la dépense de l'indicateur « 12 derniers mois » (mêmes commandes, mêmes règles).
+  - Accessibilité : un tableau de données (mois, dépense, commandes, mêmes chiffres de l'année précédente, en-têtes `th scope`) est placé sous le graphique et c'est lui que lisent les lecteurs d'écran ; le dessin est `aria-hidden`. Les séries se distinguent par le remplissage (plein / hachuré) et la légende, pas par la couleur seule ; les couleurs ont un contraste d'au moins 7:1 sur fond blanc.
+  - Pas de CDN ni de script en ligne : les données sont dans des attributs `data-*` lus par un contrôleur Stimulus (voir [ADR-0001](docs/adr/0001-charts-library.md)). Sans JavaScript, le tableau reste.
 - **Accès** : administrateurs de l'entreprise uniquement (`COMPANY_VIEW_INSIGHTS`). Les acheteurs et les approbateurs reçoivent un 403 expliqué et n'ont pas l'onglet.
 - **Cloisonnement entre entreprises** : l'entreprise est celle du membre connecté, jamais un paramètre de la requête. Le seul paramètre est la période, tirée d'une liste blanche ; toute autre valeur est remplacée par la période par défaut.
 - **Commandes comptées** : checkout terminé, non annulées, rattachées à l'entreprise par `CompanyOrder`, non en attente d'approbation.
@@ -52,6 +59,19 @@ composer require tmonier/sylius-company-insights-plugin
     ```bash
     bin/console doctrine:migrations:migrate
     ```
+
+5. Construire le graphique (facultatif, les tableaux fonctionnent sans). Ajoutez la dépendance `apexcharts` (déjà utilisée par l'administration Sylius) et importez le point d'entrée du plugin dans `assets/shop/entrypoint.js` de votre boutique :
+
+    ```js
+    import '@vendor/tmonier/sylius-company-insights-plugin/assets/shop/entrypoint';
+    ```
+
+Le fuseau horaire des mois se règle par un paramètre (par défaut : celui de PHP) :
+
+```yaml
+parameters:
+    tmonier_company_insights.timezone: 'Europe/Paris'
+```
 
 Le contrôle d'accès de la boutique Sylius doit protéger `^/(?:[a-z]{2,4}(?:_[A-Za-z]{2})?)/account` (c'est le cas dans la configuration Sylius par défaut).
 

@@ -8,6 +8,7 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
+use Webmozart\Assert\Assert;
 
 final class MonthlyChartTest extends WebTestCase
 {
@@ -47,7 +48,7 @@ final class MonthlyChartTest extends WebTestCase
         self::assertCount(5, $table->filter('thead th[scope="col"]'));
         self::assertCount(12, $table->filter('tbody th[scope="row"]'));
         $months = $table->filter('tbody tr')->each(static fn (Crawler $row): string => (string) $row->attr('data-month'));
-        self::assertSame(12, \count(array_unique($months)));
+        self::assertCount(12, array_unique($months));
         $sorted = $months;
         sort($sorted);
         self::assertSame($sorted, $months, 'Oldest first.');
@@ -73,6 +74,7 @@ final class MonthlyChartTest extends WebTestCase
         $chart = $crawler->filter('[data-test-tmonier-insights-chart]');
         self::assertCount(1, $chart);
         $categories = json_decode((string) $chart->attr('data-tmonier-insights-chart-categories-value'), true, flags: \JSON_THROW_ON_ERROR);
+        Assert::isArray($categories);
         self::assertCount(12, $categories);
         foreach ($this->chartData($crawler) as $series) {
             self::assertEquals(array_fill(0, 12, 0), $series['data']);
@@ -143,7 +145,7 @@ final class MonthlyChartTest extends WebTestCase
         $section = $crawler->filter('[data-test-tmonier-insights-monthly]');
         self::assertCount(1, $section);
         self::assertCount(0, $section->filter('script, link, img, iframe'), 'No script, style sheet or image of its own: the data is in attributes.');
-        self::assertDoesNotMatchRegularExpression('#(src|href)="https?://#', (string) $section->html());
+        self::assertDoesNotMatchRegularExpression('#(src|href)="https?://#', $section->html());
         self::assertSame('true', $crawler->filter('[data-test-tmonier-insights-chart]')->attr('aria-hidden'), 'The table is what assistive technologies read.');
     }
 
@@ -191,13 +193,22 @@ final class MonthlyChartTest extends WebTestCase
         self::assertCount(0, $crawler->filter('[data-test-tmonier-insights-chart], [data-test-tmonier-insights-monthly-table]'));
     }
 
-    /** @return list<array{name: string, currency: string, previous: bool, data: list<int|float>}> */
+    /** @return list<array{name: string, currency: string, previous: bool, data: list<float|int|numeric-string>}> */
     private function chartData(Crawler $crawler): array
     {
         $series = json_decode((string) $crawler->filter('[data-test-tmonier-insights-chart]')->attr('data-tmonier-insights-chart-series-value'), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertIsArray($series);
+        Assert::isList($series);
 
-        return $series;
+        return array_map(static function (mixed $one): array {
+            Assert::isArray($one);
+            Assert::string($one['name'] ?? null);
+            Assert::string($one['currency'] ?? null);
+            Assert::boolean($one['previous'] ?? null);
+            Assert::isList($one['data'] ?? null);
+            Assert::allNumeric($one['data']);
+
+            return ['name' => $one['name'], 'currency' => $one['currency'], 'previous' => $one['previous'], 'data' => $one['data']];
+        }, $series);
     }
 
     private function administrator(): CustomerInterface

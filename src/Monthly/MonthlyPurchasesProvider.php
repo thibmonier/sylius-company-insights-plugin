@@ -58,10 +58,10 @@ final readonly class MonthlyPurchasesProvider
             $points[] = new MonthlyPoint(
                 $months[self::MONTHS + $index]->from,
                 self::MONTHS - 1 === $index,
-                $current?->ordersCount ?? 0,
-                $current?->spend ?? 0,
-                $previous?->ordersCount ?? 0,
-                $previous?->spend ?? 0,
+                $current->ordersCount ?? 0,
+                $current->spend ?? 0,
+                $previous->ordersCount ?? 0,
+                $previous->spend ?? 0,
             );
         }
 

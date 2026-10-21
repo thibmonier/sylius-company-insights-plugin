@@ -22,7 +22,8 @@ shop pages need the Webpack entrypoints of the test application (`composer front
 ## Architecture
 
 - `Period/` (allow-listed `PeriodKey`, `PeriodResolver`: period and previous period of the same duration).
-- `Statistics/` (`DbalPurchaseStatistics`: SQL aggregates of ONE company, tax exclusive, per currency).
+- `Statistics/` (`DbalPurchaseStatistics`, `CountedOrderSql`: SQL aggregates of ONE company, tax exclusive, per currency; the SQL is shared with `Monthly/`).
+- `Monthly/` (`MonthlyPurchasesProvider`, `DbalMonthlyPurchaseStatistics`: 12 months + previous year, one series per currency, months in the report timezone; allow-listed `Metric`).
 - `Approval/` (optional port for orders waiting for approval).
 - `Indicators/` (`DashboardProvider`, `Variation`), `Security/InsightsVoter`, `Controller/Shop/InsightsController`.
 - Rule: the company comes from the signed-in member, never from the request.

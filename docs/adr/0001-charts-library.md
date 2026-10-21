@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-10-21). First used by the monthly purchases chart (US-150); the walking skeleton (US-149) only shows figures.
+Accepted (2026-10-21). Used by the monthly purchases chart (US-150): `assets/shop/entrypoint.js` registers a Stimulus controller that reads the data from `data-*` attributes of the page.
 
 ## Context
 

@@ -13,7 +13,14 @@ Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmonier/s
   - average basket, tax exclusive;
   - active buyers (customers with at least one order);
   - orders waiting for approval (number and amount), shown apart and not counted in the spend.
-- **Periods**: last 30 days, current quarter, last 12 months (default), current year. The period is in the title and in the URL (`?period=current_quarter`). The quarter and the year so far are compared with the same elapsed days of the previous quarter and year.
+- **Periods**: last 30 days, current quarter, last 12 months (default, the current calendar month and the 11 before it), current year. The period is in the title and in the URL (`?period=current_quarter`). The quarter and the year so far are compared with the same elapsed days of the previous quarter and year.
+- **Purchases per month**: bar chart of the spend of the last 12 months next to the same months of the previous year. A switch (`?metric=amount|orders`, allow-listed) shows the number of orders instead of the amount.
+  - Months without order are zeros, never gaps; the month in progress is marked "in progress" and is not a complete month.
+  - Months follow a timezone: the default timezone of PHP, or the parameter `tmonier_company_insights.timezone` (for example `Europe/Paris`; Sylius channels have no timezone of their own). An order placed on the 31st at 23:30 counts in the right month, summer time included.
+  - One series per currency, no conversion and no total mixing currencies.
+  - The 12 bars add up to the spend of the "last 12 months" indicator (same orders, same rules).
+  - Accessibility: a data table (month, spend, orders, same figures of the previous year, with `th scope` headers) sits under the chart and is what screen readers read; the drawing is `aria-hidden`. Series differ by fill (solid / hatched) and legend, not by colour alone; colours are at least 7:1 against white.
+  - No CDN and no inline script: the data is in `data-*` attributes read by a Stimulus controller (see [ADR-0001](docs/adr/0001-charts-library.md)). Without JavaScript, the table remains.
 - **Access**: company administrators only (`COMPANY_VIEW_INSIGHTS`). Buyers and approvers get an explained 403 and no tab.
 - **Isolation between companies**: the company is the one of the signed-in member, never a request parameter. The only parameter is the period, from an allow-list; any other value is replaced by the default period.
 - **Counted orders**: checkout completed, not cancelled, linked to the company by `CompanyOrder`, not waiting for approval.
@@ -52,6 +59,19 @@ composer require tmonier/sylius-company-insights-plugin
     ```bash
     bin/console doctrine:migrations:migrate
     ```
+
+5. Build the chart (optional, the tables work without it). Add the dependency `apexcharts` (already used by the Sylius admin) and import the entrypoint of the plugin in your shop `assets/shop/entrypoint.js`:
+
+    ```js
+    import '@vendor/tmonier/sylius-company-insights-plugin/assets/shop/entrypoint';
+    ```
+
+The timezone of the months can be set with a parameter (default: the timezone of PHP):
+
+```yaml
+parameters:
+    tmonier_company_insights.timezone: 'Europe/Paris'
+```
 
 The Sylius shop access control must protect `^/(?:[a-z]{2,4}(?:_[A-Za-z]{2})?)/account` (it does in the default Sylius configuration).
 
