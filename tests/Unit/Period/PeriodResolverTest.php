@@ -36,7 +36,9 @@ final class PeriodResolverTest extends TestCase
         // Upper bounds are exclusive: "today" is part of the period, so the bound is tomorrow 00:00.
         yield 'last 30 days' => ['2026-10-21 15:30:00', PeriodKey::Last30Days, ['2026-09-22', '2026-10-22'], ['2026-08-23', '2026-09-22']];
         yield 'quarter to date' => ['2026-10-21 15:30:00', PeriodKey::CurrentQuarter, ['2026-10-01', '2026-10-22'], ['2026-07-01', '2026-07-22']];
-        yield 'last 12 months' => ['2026-10-21 15:30:00', PeriodKey::Last12Months, ['2025-10-22', '2026-10-22'], ['2024-10-22', '2025-10-22']];
+        // Calendar months, so that the twelve bars of the monthly chart add up to the indicator.
+        yield 'last 12 months' => ['2026-10-21 15:30:00', PeriodKey::Last12Months, ['2025-11-01', '2026-10-22'], ['2024-11-01', '2025-11-01']];
+        yield 'last 12 months on the first of the month' => ['2026-10-01 00:00:00', PeriodKey::Last12Months, ['2025-11-01', '2026-10-02'], ['2024-11-01', '2025-11-01']];
         yield 'year to date' => ['2026-10-21 15:30:00', PeriodKey::CurrentYear, ['2026-01-01', '2026-10-22'], ['2025-01-01', '2025-10-22']];
         yield 'first day of the year' => ['2026-01-01 00:00:00', PeriodKey::CurrentYear, ['2026-01-01', '2026-01-02'], ['2025-01-01', '2025-01-02']];
         yield 'first quarter' => ['2026-02-10 09:00:00', PeriodKey::CurrentQuarter, ['2026-01-01', '2026-02-11'], ['2025-10-01', '2025-11-11']];
@@ -59,6 +61,17 @@ final class PeriodResolverTest extends TestCase
 
         // 2026-10-22 08:30 in Tokyo: the period ends at the next Tokyo midnight.
         self::assertSame(['2026-09-23', '2026-10-23'], $this->bounds($comparison->current));
+    }
+
+    public function testTheMonthsFollowTheConfiguredTimezone(): void
+    {
+        // 2026-10-31 23:30 in UTC is already November 1st in Tokyo.
+        $clock = new MockClock('2026-10-31 23:30:00', 'UTC');
+
+        $comparison = (new PeriodResolver($clock, 'Asia/Tokyo'))->resolve(PeriodKey::Last12Months);
+
+        self::assertSame(['2025-12-01', '2026-11-02'], $this->bounds($comparison->current));
+        self::assertSame('Asia/Tokyo', $comparison->current->from->getTimezone()->getName());
     }
 
     /** @return array{string, string} */
