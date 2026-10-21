@@ -16,6 +16,7 @@ use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Component\Core\OrderCheckoutStates;
 use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
@@ -117,22 +118,8 @@ final class TestCatalog
      */
     public function order(CustomerInterface $customer, int $total, string $completedAt = 'now', string $currency = 'EUR', string $state = OrderInterface::STATE_NEW, int $tax = 0, int $unitTax = 0, int $shipmentTax = 0): OrderInterface
     {
-        $channel = $this->channel();
-        /** @var FactoryInterface<OrderInterface> $orderFactory */
-        $orderFactory = $this->container->get('sylius.factory.order');
-        $order = $orderFactory->createNew();
-        $order->setChannel($channel);
-        $order->setLocaleCode($this->localeCode());
-        $order->setCurrencyCode($currency);
-        $order->setCustomerWithAuthorization($customer);
-        $order->setTokenValue(bin2hex(random_bytes(10)));
-        $order->setNumber(sprintf('INS-%s-%03d', $this->suffix, ++$this->sequence));
-        $order->setState($state);
-        $order->setCheckoutState(OrderCheckoutStates::STATE_COMPLETED);
-        $order->setPaymentState('awaiting_payment');
-        $order->setShippingState('ready');
-        $order->setCheckoutCompletedAt(new \DateTime($completedAt));
-        $this->addItem($order);
+        $order = $this->newOrder($customer, $completedAt, $currency, $state);
+        $this->addItem($order, $this->variant(), 1);
         $this->entityManager()->persist($order);
         $this->entityManager()->flush();
 
@@ -156,8 +143,97 @@ final class TestCatalog
     }
 
     /**
-     * An order waiting for approval, as tmonier/sylius-purchase-approval-plugin records it.
+     * An order with one line per entry. The total of a line is what the customer pays for it after the
+     * discounts of the line, tax included; its tax is recorded on the first unit of the line.
+     *
+     * @param list<array{0: ProductVariantInterface, 1: int, 2: int, 3?: int}> $lines variant, quantity, total, tax
      */
+    public function orderOfLines(CustomerInterface $customer, array $lines, string $completedAt = 'now', string $currency = 'EUR', string $state = OrderInterface::STATE_NEW): OrderInterface
+    {
+        $order = $this->newOrder($customer, $completedAt, $currency, $state);
+        foreach ($lines as [$variant, $quantity]) {
+            $this->addItem($order, $variant, $quantity);
+        }
+        $this->entityManager()->persist($order);
+        $this->entityManager()->flush();
+
+        $total = 0;
+        foreach (array_values($order->getItems()->toArray()) as $index => $item) {
+            $lineTotal = $lines[$index][2];
+            $total += $lineTotal;
+            $this->connection()->executeStatement(
+                'UPDATE sylius_order_item SET units_total = :total, adjustments_total = 0, total = :total WHERE id = :id',
+                ['total' => $lineTotal, 'id' => $item->getId()],
+            );
+            $unit = $item->getUnits()->first();
+            if (($lines[$index][3] ?? 0) > 0 && false !== $unit) {
+                $this->insertAdjustment('order_item_unit_id', (int) $unit->getId(), $lines[$index][3]);
+            }
+        }
+        $this->connection()->executeStatement(
+            'UPDATE sylius_order SET items_total = :total, adjustments_total = 0, total = :total WHERE id = :id',
+            ['total' => $total, 'id' => $order->getId()],
+        );
+
+        return $order;
+    }
+
+    public function taxon(string $code, string $name): TaxonInterface
+    {
+        $taxon = $this->container->get('sylius.factory.taxon')->createNew();
+        $taxon->setCode($code . '_' . $this->suffix);
+        $taxon->setCurrentLocale($this->localeCode());
+        $taxon->setFallbackLocale($this->localeCode());
+        $taxon->setName($name);
+        $taxon->setSlug(strtolower($code) . '-' . $this->suffix);
+        $this->entityManager()->persist($taxon);
+        $this->entityManager()->flush();
+
+        return $taxon;
+    }
+
+    /**
+     * A product with one variant, named in the given locales only (locale code => name).
+     *
+     * @param array<string, string> $names
+     */
+    public function product(string $code, array $names, ?TaxonInterface $mainTaxon = null, ?string $variantName = null): ProductVariantInterface
+    {
+        $channel = $this->channel();
+        $product = $this->container->get('sylius.factory.product')->createWithVariant();
+        $product->setCode($code . '_' . $this->suffix);
+        foreach ($names as $locale => $name) {
+            $product->setCurrentLocale($locale);
+            $product->setName($name);
+            $product->setSlug(strtolower($code) . '-' . $locale . '-' . $this->suffix);
+        }
+        $product->setEnabled(true);
+        $product->addChannel($channel);
+        $product->setMainTaxon($mainTaxon);
+
+        $variant = $product->getVariants()->first();
+        Assert::isInstanceOf($variant, ProductVariantInterface::class);
+        $variant->setCode($code . '-' . $this->suffix);
+        if (null !== $variantName) {
+            foreach (array_keys($names) as $locale) {
+                $variant->setCurrentLocale($locale);
+                $variant->setName($variantName);
+            }
+        }
+        $variant->setEnabled(true);
+        $variant->setTracked(false);
+        $pricing = $this->container->get('sylius.factory.channel_pricing')->createNew();
+        $pricing->setChannelCode($channel->getCode());
+        $pricing->setPrice(2500);
+        $pricing->setOriginalPrice(2500);
+        $variant->addChannelPricing($pricing);
+
+        $this->entityManager()->persist($product);
+        $this->entityManager()->flush();
+
+        return $variant;
+    }
+
     public function pendingApproval(OrderInterface $order, string $state = 'pending'): void
     {
         $this->connection()->insert('tmonier_purchase_approval_order_approval', [
