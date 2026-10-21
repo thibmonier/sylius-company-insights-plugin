@@ -7,6 +7,7 @@ namespace Tmonier\SyliusCompanyInsightsPlugin\Statistics;
 use Doctrine\DBAL\Connection;
 use Tmonier\SyliusCompanyInsightsPlugin\Approval\PendingOrderConditionInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
+use Webmozart\Assert\Assert;
 
 /**
  * Aggregates computed by the database (no entity is loaded), on plain SQL that runs on MySQL,
@@ -41,6 +42,8 @@ final readonly class DbalPurchaseStatistics implements PurchaseStatisticsInterfa
         }
         $buyers = $this->connection->fetchOne(sprintf('SELECT COUNT(DISTINCT o.customer_id) FROM sylius_order o INNER JOIN tmonier_company_order co ON co.order_id = o.id WHERE %s', $where), $parameters);
 
+        Assert::numeric($buyers);
+
         return new PeriodStatistics($totals, (int) $buyers);
     }
 
@@ -67,10 +70,13 @@ final readonly class DbalPurchaseStatistics implements PurchaseStatisticsInterfa
             $where,
         ), $parameters);
 
-        return array_values(array_map(
-            static fn (array $row): CurrencyTotals => new CurrencyTotals((string) $row['currency_code'], (int) $row['orders_count'], (int) $row['spend']),
-            $rows,
-        ));
+        return array_map(static function (array $row): CurrencyTotals {
+            Assert::string($row['currency_code']);
+            Assert::numeric($row['orders_count']);
+            Assert::numeric($row['spend']);
+
+            return new CurrencyTotals($row['currency_code'], (int) $row['orders_count'], (int) $row['spend']);
+        }, $rows);
     }
 
     private function where(?string $pendingCondition, bool $pendingOnly): string

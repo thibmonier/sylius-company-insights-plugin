@@ -22,8 +22,8 @@ final class PeriodResolverTest extends TestCase
     {
         $comparison = (new PeriodResolver(new MockClock($now)))->resolve($key);
 
-        self::assertSame($current, self::bounds($comparison->current));
-        self::assertSame($previous, self::bounds($comparison->previous));
+        self::assertSame($current, $this->bounds($comparison->current));
+        self::assertSame($previous, $this->bounds($comparison->previous));
         if (PeriodKey::Last12Months !== $key) {
             // Twelve calendar months do not always hold the same number of days.
             self::assertSame($comparison->current->days(), $comparison->previous->days());
@@ -58,11 +58,11 @@ final class PeriodResolverTest extends TestCase
         $comparison = (new PeriodResolver($clock))->resolve(PeriodKey::Last30Days);
 
         // 2026-10-22 08:30 in Tokyo: the period ends at the next Tokyo midnight.
-        self::assertSame(['2026-09-23', '2026-10-23'], self::bounds($comparison->current));
+        self::assertSame(['2026-09-23', '2026-10-23'], $this->bounds($comparison->current));
     }
 
     /** @return array{string, string} */
-    private static function bounds(\Tmonier\SyliusCompanyInsightsPlugin\Period\Period $period): array
+    private function bounds(\Tmonier\SyliusCompanyInsightsPlugin\Period\Period $period): array
     {
         return [$period->from->format('Y-m-d'), $period->to->format('Y-m-d')];
     }

@@ -57,7 +57,7 @@ final class DashboardProviderTest extends KernelTestCase
 
         $dashboard = $this->dashboard($company->getId(), PeriodKey::Last30Days);
 
-        self::assertSame(['EUR', 'USD'], array_map(static fn ($currency): string => $currency->currencyCode, $dashboard->currencies));
+        self::assertSame(['EUR', 'USD'], array_map(static fn (\Tmonier\SyliusCompanyInsightsPlugin\Indicators\CurrencyIndicators $currency): string => $currency->currencyCode, $dashboard->currencies));
         self::assertSame(0, $dashboard->currencies[1]->spend->value);
         self::assertSame(-100.0, $dashboard->currencies[1]->spend->variation->percent);
     }

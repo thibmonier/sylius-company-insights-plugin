@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Doctrine\CompanyOrderIndexListener;
 use Tmonier\SyliusCompanyInsightsPlugin\Migrations\Version20261021100000;
 
@@ -20,18 +21,18 @@ final class MigrationTest extends KernelTestCase
 {
     public function testTheIndexGoesDownAndUpAgain(): void
     {
-        self::bootKernel();
+        $kernel = self::bootKernel();
         self::assertTrue($this->hasIndex(), 'The test database is migrated.');
 
         try {
-            $this->execute('down');
+            $this->execute($kernel, 'down');
             self::assertFalse($this->hasIndex(), 'Down drops the index.');
 
-            $this->execute('up');
+            $this->execute($kernel, 'up');
             self::assertTrue($this->hasIndex(), 'Up creates the index.');
         } finally {
             if (!$this->hasIndex()) {
-                $this->execute('up');
+                $this->execute($kernel, 'up');
             }
         }
     }
@@ -46,12 +47,14 @@ final class MigrationTest extends KernelTestCase
 
         $metadata = $entityManager->getClassMetadata($companyOrder);
 
-        self::assertSame(['columns' => CompanyOrderIndexListener::COLUMNS], $metadata->table['indexes'][CompanyOrderIndexListener::INDEX_NAME]);
+        $indexes = $metadata->table['indexes'] ?? [];
+
+        self::assertSame(['columns' => CompanyOrderIndexListener::COLUMNS], $indexes[CompanyOrderIndexListener::INDEX_NAME] ?? null);
     }
 
-    private function execute(string $direction): void
+    private function execute(KernelInterface $kernel, string $direction): void
     {
-        $application = new Application(self::$kernel);
+        $application = new Application($kernel);
         $application->setAutoExit(false);
         $exit = $application->run(
             new ArrayInput(['command' => 'doctrine:migrations:execute', 'versions' => [Version20261021100000::class], '--' . $direction => true, '--no-interaction' => true]),
