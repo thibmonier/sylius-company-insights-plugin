@@ -34,14 +34,12 @@ final readonly class DashboardProvider
         );
     }
 
-    /** @return list<CurrencyIndicators> */
+    /** @return non-empty-list<CurrencyIndicators> */
     private function currencies(PeriodStatistics $current, PeriodStatistics $previous, string $fallbackCurrency): array
     {
         $codes = array_unique([...array_keys($current->totals), ...array_keys($previous->totals)]);
         sort($codes);
-        if ([] === $codes) {
-            $codes = [$fallbackCurrency];
-        }
+        $codes = [] === $codes ? [$fallbackCurrency] : $codes;
 
         return array_map(static function (string $code) use ($current, $previous): CurrencyIndicators {
             $now = $current->totals[$code] ?? new CurrencyTotals($code, 0, 0);

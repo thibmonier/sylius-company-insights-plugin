@@ -25,6 +25,46 @@ tmonier_company_insights:
         series_current: '%currency%, 12 derniers mois'
         series_previous: '%currency%, année précédente'
         note: 'Le mois en cours n''est pas terminé : ne le comparez pas au mois complet de l''année précédente.'
+    ranking:
+        buyers:
+            title: 'Top acheteurs'
+            description: 'Qui achète le plus dans votre entreprise. Les membres sont affichés par leur nom, jamais par leur adresse e-mail.'
+            caption: 'Top acheteurs en %currency%, avec leur part de la dépense'
+            deactivated: 'désactivé'
+            unknown: 'Ancien membre'
+        products:
+            title: 'Top produits'
+            description: 'Les produits qui pèsent le plus dans vos achats, avec la date du dernier achat.'
+            caption: 'Top produits en %currency%'
+        categories:
+            title: 'Top catégories'
+            description: 'La part de chaque catégorie principale dans votre dépense. Les parts font 100 %.'
+            caption: 'Top catégories en %currency%, avec leur part de la dépense'
+            uncategorized: 'Sans catégorie'
+            others: 'Autres catégories'
+        column:
+            member: 'Membre'
+            product: 'Produit'
+            code: 'Code'
+            category: 'Catégorie'
+            quantity: 'Quantité'
+            spend: 'Dépense HT'
+            orders: 'Commandes'
+            share: 'Part de la dépense'
+            last_purchase: 'Dernier achat'
+        sort:
+            spend: 'Par dépense'
+            quantity: 'Par quantité'
+        sort_selector: 'Trier les produits'
+        currency_selector: 'Devise'
+        see_all: 'Voir tout'
+        empty: "Rien n'a été acheté sur cette période."
+        pagination: 'Pages du classement'
+        page_of: 'Page %page% sur %pages%'
+        go_to_page: 'Page %page%'
+        previous: 'Précédent'
+        next: 'Suivant'
+        back: 'Retour au tableau de bord des achats'
     metric:
         amount: 'Dépense HT'
         orders: 'Nombre de commandes'

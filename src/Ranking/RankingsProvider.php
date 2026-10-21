@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Ranking;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
+
 /**
  * The rankings of the purchasing dashboard. Every list is about ONE company and ONE currency; a
  * page beyond the last one is the last one. The shares are in whole percent: the categories
@@ -16,6 +18,24 @@ final readonly class RankingsProvider
         private ProductRankingInterface $products,
         private CategoryRankingInterface $categories,
     ) {
+    }
+
+    /**
+     * The top 10 of each ranking, one set per currency.
+     *
+     * @param list<string> $currencyCodes
+     *
+     * @return list<CurrencyRankings>
+     */
+    public function top(int $companyId, Period $period, array $currencyCodes, string $localeCode, ProductSort $sort): array
+    {
+        $top = PageRequest::top();
+
+        return array_map(function (string $code) use ($companyId, $period, $localeCode, $sort, $top): CurrencyRankings {
+            $scope = new RankingScope($companyId, $period, $code, $localeCode);
+
+            return new CurrencyRankings($code, $this->buyers($scope, $top), $this->products($scope, $sort, $top), $this->categories($scope, $top));
+        }, $currencyCodes);
     }
 
     /** @return Ranking<BuyerRow> */

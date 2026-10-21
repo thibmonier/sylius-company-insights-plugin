@@ -27,6 +27,28 @@ sylius_twig_hooks:
             monthly:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/monthly.html.twig'
                 priority: -20
+            rankings:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/rankings.html.twig'
+                priority: -30
+
+        # Full ranking (buyers, products or categories), paginated.
+        'tmonier_company_insights_shop.account.company.insights_ranking.index.content':
+            breadcrumbs:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/ranking_breadcrumbs.html.twig'
+                priority: 200
+
+        'tmonier_company_insights_shop.account.company.insights_ranking.index.content.main.header':
+            title:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/title.html.twig'
+                priority: 100
+            navigation:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/navigation.html.twig'
+                priority: 0
+
+        'tmonier_company_insights_shop.account.company.insights_ranking.index.content.main':
+            section:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/ranking_page.html.twig'
+                priority: -10
 
         # Explained refusal.
         'tmonier_company_insights_shop.account.company.insights_forbidden.index.content':

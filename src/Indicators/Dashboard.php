@@ -10,7 +10,7 @@ use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CurrencyTotals;
 final readonly class Dashboard
 {
     /**
-     * @param list<CurrencyIndicators> $currencies One line per currency, never empty
+     * @param non-empty-list<CurrencyIndicators> $currencies One line per currency, never empty
      * @param list<CurrencyTotals>     $pending Orders waiting for approval, apart from the spend
      */
     public function __construct(

@@ -1,0 +1,30 @@
+{#
+ # Table of the products (variants). Context: ranking (Ranking of ProductRow), locale. The name is
+ # that of the language of the page; without translation the code stands for the name.
+ #}
+<div class="table-responsive">
+    <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'products') }}>
+        <caption class="caption-top">{{ 'tmonier_company_insights.ranking.products.caption'|trans({'%currency%': ranking.currencyCode}) }}</caption>
+        <thead>
+            <tr>
+                <th scope="col">{{ 'tmonier_company_insights.ranking.column.product'|trans }}</th>
+                <th scope="col">{{ 'tmonier_company_insights.ranking.column.code'|trans }}</th>
+                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.quantity'|trans }}</th>
+                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
+                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.last_purchase'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in ranking.rows %}
+                {% set name = [row.productName, row.variantName]|filter(part => part is not empty)|join(' - ') %}
+                <tr data-code="{{ row.code }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
+                    <th scope="row">{{ name is empty ? row.code : name }}</th>
+                    <td>{{ row.code }}</td>
+                    <td class="text-end">{{ row.quantity|format_number }}</td>
+                    <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                    <td class="text-end">{{ row.lastPurchase|format_date('medium', timezone: row.timezoneName) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

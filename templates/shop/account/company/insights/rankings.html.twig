@@ -1,0 +1,36 @@
+{#
+ # The top 10 of the buyers, the products and the categories of the period, one set per currency
+ # (amounts of different currencies are never added). Each list links to its full, paginated page.
+ #}
+{% set context = hookable_metadata.context %}
+{% set locale = app.request.locale %}
+{% set period_key = context.dashboard.periods.key.value %}
+{% set several = context.rankings|length > 1 %}
+{% set metric_parameters = context.metric.value != 'amount' ? {metric: context.metric.value} : {} %}
+
+{% for set in context.rankings %}
+    {% set suffix = several ? ' (' ~ set.currencyCode ~ ')' : '' %}
+    {% for kind in ['buyers', 'products', 'categories'] %}
+        {% set ranking = attribute(set, kind) %}
+        {% set see_all = path('tmonier_company_insights_shop_ranking', {ranking: kind, period: period_key, currency: set.currencyCode}|merge(kind == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {})) %}
+        <section aria-labelledby="insights-ranking-{{ kind }}-{{ set.currencyCode }}" class="card mt-4" {{ sylius_test_html_attribute('tmonier-insights-ranking', kind ~ '-' ~ set.currencyCode) }}>
+            <div class="card-body">
+                <h3 class="h5" id="insights-ranking-{{ kind }}-{{ set.currencyCode }}">{{ ('tmonier_company_insights.ranking.' ~ kind ~ '.title')|trans }}{{ suffix }}</h3>
+                <p>{{ ('tmonier_company_insights.ranking.' ~ kind ~ '.description')|trans }}</p>
+
+                {% if kind == 'products' %}
+                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/sorts.html.twig' with { sorts: context.sorts, sort: context.sort, route: 'tmonier_company_insights_shop_insights', parameters: {period: period_key}|merge(metric_parameters) } only %}
+                {% endif %}
+
+                {% if ranking.rows is empty %}
+                    <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-ranking-empty') }}>{{ 'tmonier_company_insights.ranking.empty'|trans }}</p>
+                {% else %}
+                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/ranking/' ~ kind ~ '.html.twig' with { ranking: ranking, locale: locale, summary: true } only %}
+                    {% if ranking.hasMore %}
+                        <a href="{{ see_all }}" {{ sylius_test_html_attribute('tmonier-insights-see-all') }}>{{ 'tmonier_company_insights.ranking.see_all'|trans }}<span class="visually-hidden"> : {{ ('tmonier_company_insights.ranking.' ~ kind ~ '.title')|trans }}{{ suffix }}</span></a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </section>
+    {% endfor %}
+{% endfor %}

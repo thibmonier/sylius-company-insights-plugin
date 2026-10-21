@@ -94,6 +94,7 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_company_accounts.current_member_resolver'),
             service('tmonier_company_insights.dashboard_provider'),
             service('tmonier_company_insights.monthly_purchases_provider'),
+            service('tmonier_company_insights.rankings_provider'),
             service('sylius.context.currency'),
         ])
         ->call('setContainer', [service(\Psr\Container\ContainerInterface::class)])

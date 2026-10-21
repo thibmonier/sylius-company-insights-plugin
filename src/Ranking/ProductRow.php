@@ -16,4 +16,10 @@ final readonly class ProductRow
         public \DateTimeImmutable $lastPurchase,
     ) {
     }
+
+    /** Name of the timezone the date is in, to format it without moving it. */
+    public function timezoneName(): string
+    {
+        return $this->lastPurchase->getTimezone()->getName();
+    }
 }

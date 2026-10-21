@@ -1,0 +1,64 @@
+{#
+ # A full ranking, paginated, for one currency. Context: dashboard, kind, ranking, currencies, sort, sorts.
+ #}
+{% set context = hookable_metadata.context %}
+{% set ranking = context.ranking %}
+{% set kind = context.kind %}
+{% set periods = context.dashboard.periods %}
+{% set locale = app.request.locale %}
+{% set base = {ranking: kind.value, period: periods.key.value, currency: ranking.currencyCode}|merge(kind.value == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {}) %}
+{% set current = ranking.page.page %}
+
+<h2 class="h4" {{ sylius_test_html_attribute('tmonier-insights-ranking-title') }}>{{ kind.title|trans }}{% if context.currencies|length > 1 %} ({{ ranking.currencyCode }}){% endif %}</h2>
+<p>{{ 'tmonier_company_insights.ui.period_title'|trans({'%period%': periods.key.label|trans, '%from%': periods.current.from|format_date('medium'), '%to%': periods.current.lastDay|format_date('medium')}) }}. {{ 'tmonier_company_insights.ui.amounts_note'|trans }}</p>
+
+{% if context.currencies|length > 1 %}
+    <nav aria-label="{{ 'tmonier_company_insights.ranking.currency_selector'|trans }}" class="mb-3">
+        <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-currencies') }}>
+            {% for code in context.currencies %}
+                <li class="nav-item">
+                    <a class="nav-link {{ code == ranking.currencyCode ? 'active' }}" href="{{ path('tmonier_company_insights_shop_ranking', base|merge({currency: code})) }}" {% if code == ranking.currencyCode %}aria-current="true"{% endif %}>{{ code }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+{% endif %}
+
+{% if kind.value == 'products' %}
+    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/sorts.html.twig' with { sorts: context.sorts, sort: context.sort, route: 'tmonier_company_insights_shop_ranking', parameters: base|merge({page: null}) } only %}
+{% endif %}
+
+<section class="card" aria-labelledby="insights-ranking-page-title" {{ sylius_test_html_attribute('tmonier-insights-ranking', kind.value ~ '-' ~ ranking.currencyCode) }}>
+    <div class="card-body">
+        <h3 class="visually-hidden" id="insights-ranking-page-title">{{ kind.title|trans }}</h3>
+        {% if ranking.rows is empty %}
+            <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-ranking-empty') }}>{{ 'tmonier_company_insights.ranking.empty'|trans }}</p>
+        {% else %}
+            {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/ranking/' ~ kind.value ~ '.html.twig' with { ranking: ranking, locale: locale, summary: false } only %}
+        {% endif %}
+
+        {% if ranking.pages > 1 %}
+            {% set numbers = range(1, ranking.pages)|filter(n => n == 1 or n == ranking.pages or (n >= current - 2 and n <= current + 2)) %}
+            <nav aria-label="{{ 'tmonier_company_insights.ranking.pagination'|trans }}" {{ sylius_test_html_attribute('tmonier-insights-pagination') }}>
+                <p class="mb-2">{{ 'tmonier_company_insights.ranking.page_of'|trans({'%page%': current, '%pages%': ranking.pages}) }}</p>
+                <ul class="pagination flex-wrap">
+                    {% if current > 1 %}
+                        <li class="page-item"><a class="page-link" rel="prev" href="{{ path('tmonier_company_insights_shop_ranking', base|merge({page: current - 1})) }}">{{ 'tmonier_company_insights.ranking.previous'|trans }}</a></li>
+                    {% endif %}
+                    {% for number in numbers %}
+                        <li class="page-item {{ number == current ? 'active' }}">
+                            <a class="page-link" href="{{ path('tmonier_company_insights_shop_ranking', base|merge({page: number})) }}" aria-label="{{ 'tmonier_company_insights.ranking.go_to_page'|trans({'%page%': number}) }}" {% if number == current %}aria-current="page"{% endif %}>{{ number }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if current < ranking.pages %}
+                        <li class="page-item"><a class="page-link" rel="next" href="{{ path('tmonier_company_insights_shop_ranking', base|merge({page: current + 1})) }}">{{ 'tmonier_company_insights.ranking.next'|trans }}</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</section>
+
+<p class="mt-3">
+    <a href="{{ path('tmonier_company_insights_shop_insights', {period: periods.key.value}) }}" {{ sylius_test_html_attribute('tmonier-insights-back') }}>{{ 'tmonier_company_insights.ranking.back'|trans }}</a>
+</p>

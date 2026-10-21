@@ -4,3 +4,12 @@ tmonier_company_insights_shop_insights:
     methods: [GET]
     defaults:
         _controller: tmonier_company_insights.controller.shop.insights::showAction
+
+# "See all" of a ranking: buyers, products or categories (allow-list), paginated.
+tmonier_company_insights_shop_ranking:
+    path: /account/company/insights/{ranking}
+    methods: [GET]
+    requirements:
+        ranking: 'buyers|products|categories'
+    defaults:
+        _controller: tmonier_company_insights.controller.shop.insights::rankingAction

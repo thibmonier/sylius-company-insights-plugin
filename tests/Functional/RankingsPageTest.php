@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
+use Webmozart\Assert\Assert;
 
 final class RankingsPageTest extends WebTestCase
 {
@@ -135,6 +136,8 @@ final class RankingsPageTest extends WebTestCase
         self::assertSame('true', $donut->attr('aria-hidden'));
         self::assertSame('tmonier-insights-donut', $donut->attr('data-controller'));
         $values = json_decode((string) $donut->attr('data-tmonier-insights-donut-values-value'), true, flags: \JSON_THROW_ON_ERROR);
+        Assert::isArray($values);
+        Assert::allNumeric($values);
         self::assertEqualsWithDelta(300.0, array_sum($values), 0.001);
         self::assertCount(0, $block->filter('script, link, img, iframe'));
     }
@@ -211,15 +214,19 @@ final class RankingsPageTest extends WebTestCase
         $this->catalog()->order($this->buyer($company, 'claire', 'Claire', 'Martin'), 10_000, '-10 days', 'EUR');
         $this->catalog()->order($this->buyer($company, 'paul', 'Paul', 'Durand'), 7_000, '-10 days', 'CHF');
 
-        $chf = $this->open($admin, '/buyers?currency=CHF');
-        $unknown = $this->open($admin, '/buyers?currency=USD');
+        $default = $this->open($admin, '/buyers')->filter('[data-test-tmonier-insights-ranking]')->text();
+        $chf = $this->open($admin, '/buyers?currency=CHF')->filter('[data-test-tmonier-insights-ranking]')->text();
+        $eur = $this->open($admin, '/buyers?currency=EUR')->filter('[data-test-tmonier-insights-ranking]')->text();
+        $unknown = $this->open($admin, '/buyers?currency=USD')->filter('[data-test-tmonier-insights-ranking]')->text();
         $injection = $this->open($admin, "/buyers?currency=EUR'%20OR%201=1");
 
-        self::assertStringContainsString('Paul Durand', $chf->text());
-        self::assertStringNotContainsString('Claire Martin', $chf->text());
+        self::assertStringContainsString('Paul Durand', $chf);
+        self::assertStringNotContainsString('Claire Martin', $chf);
+        self::assertStringContainsString('Claire Martin', $eur);
+        self::assertStringNotContainsString('Paul Durand', $eur);
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Claire Martin', $unknown->text());
-        self::assertStringContainsString('Claire Martin', $injection->text());
+        self::assertSame($default, $unknown, 'A currency of nobody is the default one.');
+        self::assertSame($default, $injection->filter('[data-test-tmonier-insights-ranking]')->text());
     }
 
     public function testTheFullListsOnlyShowTheCompanyOfTheMemberWhateverTheRequest(): void
@@ -297,6 +304,7 @@ final class RankingsPageTest extends WebTestCase
     private function open(CustomerInterface $customer, string $suffix = ''): Crawler
     {
         $this->loginShopUser($customer);
+
         return $this->client->request('GET', $this->shopUrl(self::URL . $suffix));
     }
 }

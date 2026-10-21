@@ -7,7 +7,7 @@
     <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-periods') }}>
         {% for key in context.period_keys %}
             <li class="nav-item">
-                <a class="nav-link {{ key == periods.key ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: key.value}|merge(context.metric.value != 'amount' ? {metric: context.metric.value} : {})) }}" {% if key == periods.key %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-period', key.value) }}>{{ key.label|trans }}</a>
+                <a class="nav-link {{ key == periods.key ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: key.value}|merge(context.metric.value != 'amount' ? {metric: context.metric.value} : {})|merge(context.sort.value != 'spend' ? {sort: context.sort.value} : {})) }}" {% if key == periods.key %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-period', key.value) }}>{{ key.label|trans }}</a>
             </li>
         {% endfor %}
     </ul>
