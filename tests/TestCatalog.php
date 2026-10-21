@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusCompanyInsightsPlugin;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Container\ContainerInterface;
 use Sylius\Component\Core\Model\AdjustmentInterface;
@@ -296,6 +297,7 @@ final class TestCatalog
     private function insertAdjustment(string $column, int $id, int $amount): void
     {
         $this->connection()->insert('sylius_adjustment', [
+            ...$this->explicitId('sylius_adjustment'),
             $column => $id,
             'type' => AdjustmentInterface::TAX_ADJUSTMENT,
             'label' => 'VAT',
@@ -307,11 +309,28 @@ final class TestCatalog
         ]);
     }
 
+    /**
+     * MySQL fills the id itself (auto-increment). PostgreSQL does not: Doctrine maps the ids to a sequence that is not
+     * the column default, so a raw insert must take the next value of that sequence.
+     *
+     * @return array{id?: int}
+     */
+    private function explicitId(string $table): array
+    {
+        if (!$this->connection()->getDatabasePlatform() instanceof PostgreSQLPlatform) {
+            return [];
+        }
+
+        return ['id' => (int) $this->connection()->fetchOne(\sprintf("SELECT nextval('%s_id_seq')", $table))];
+    }
+
     private function insertShipment(int $orderId): int
     {
         $method = $this->connection()->fetchOne('SELECT id FROM sylius_shipping_method LIMIT 1');
         Assert::notFalse($method, 'The test database needs the Sylius fixtures (a shipping method).');
+        $id = $this->explicitId('sylius_shipment');
         $this->connection()->insert('sylius_shipment', [
+            ...$id,
             'method_id' => $method,
             'order_id' => $orderId,
             'state' => 'ready',
@@ -319,7 +338,7 @@ final class TestCatalog
             'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ]);
 
-        return (int) $this->connection()->lastInsertId();
+        return (int) ($id['id'] ?? $this->connection()->lastInsertId());
     }
 
     private function variant(): ProductVariantInterface
