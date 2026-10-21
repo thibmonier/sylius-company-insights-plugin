@@ -36,7 +36,7 @@ final class MonthlyPurchasesProviderTest extends TestCase
             new MonthlyTotals('EUR', 12, 2, 30_000),
             new MonthlyTotals('EUR', 23, 1, 5_000),
             new MonthlyTotals('EUR', 17, 4, 12_000),
-            new MonthlyTotals('EUR', 5, 3, 9_000),
+            new MonthlyTotals('EUR', 0, 3, 9_000),
         ]))->provide(7, 'EUR');
 
         self::assertCount(1, $series);

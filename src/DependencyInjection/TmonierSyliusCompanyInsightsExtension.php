@@ -18,8 +18,15 @@ final class TmonierSyliusCompanyInsightsExtension extends Extension implements P
 
     private const PURCHASE_APPROVAL_PARAMETER = 'tmonier_company_insights.purchase_approval_bridge';
 
+    private const TIMEZONE_PARAMETER = 'tmonier_company_insights.timezone';
+
     public function load(array $configs, ContainerBuilder $container): void
     {
+        // Timezone of the months of the report; null follows the default timezone of PHP.
+        if (!$container->hasParameter(self::TIMEZONE_PARAMETER)) {
+            $container->setParameter(self::TIMEZONE_PARAMETER, null);
+        }
+
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.php');
 
