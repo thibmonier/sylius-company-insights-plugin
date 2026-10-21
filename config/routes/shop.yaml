@@ -1,0 +1,6 @@
+# Under /{_locale}/account: the Sylius shop access control requires a signed-in customer.
+tmonier_company_insights_shop_insights:
+    path: /account/company/insights
+    methods: [GET]
+    defaults:
+        _controller: tmonier_company_insights.controller.shop.insights::showAction

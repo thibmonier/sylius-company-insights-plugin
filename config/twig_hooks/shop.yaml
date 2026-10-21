@@ -1,0 +1,45 @@
+sylius_twig_hooks:
+    hooks:
+        # Tab of the "My company" pages, for the administrators only (extension point of company-accounts).
+        'tmonier_company_accounts.shop.account.company.tabs':
+            tmonier_company_insights:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/tab.html.twig'
+                priority: 80
+
+        # Dashboard.
+        'tmonier_company_insights_shop.account.company.insights.index.content':
+            breadcrumbs:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/breadcrumbs.html.twig'
+                priority: 200
+
+        'tmonier_company_insights_shop.account.company.insights.index.content.main.header':
+            title:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/title.html.twig'
+                priority: 100
+            navigation:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/navigation.html.twig'
+                priority: 0
+
+        'tmonier_company_insights_shop.account.company.insights.index.content.main':
+            section:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/dashboard.html.twig'
+                priority: -10
+
+        # Explained refusal.
+        'tmonier_company_insights_shop.account.company.insights_forbidden.index.content':
+            breadcrumbs:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/breadcrumbs.html.twig'
+                priority: 200
+
+        'tmonier_company_insights_shop.account.company.insights_forbidden.index.content.main.header':
+            title:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/title.html.twig'
+                priority: 100
+            navigation:
+                template: '@TmonierSyliusCompanyAccountsPlugin/shop/account/company/common/navigation.html.twig'
+                priority: 0
+
+        'tmonier_company_insights_shop.account.company.insights_forbidden.index.content.main':
+            section:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/forbidden_message.html.twig'
+                priority: -10

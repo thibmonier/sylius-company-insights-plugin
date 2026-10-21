@@ -1,0 +1,86 @@
+{% set context = hookable_metadata.context %}
+{% set dashboard = context.dashboard %}
+{% set periods = dashboard.periods %}
+{% set locale = app.request.locale %}
+
+<nav aria-label="{{ 'tmonier_company_insights.ui.period_selector'|trans }}" class="mb-4">
+    <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-periods') }}>
+        {% for key in context.period_keys %}
+            <li class="nav-item">
+                <a class="nav-link {{ key == periods.key ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: key.value}) }}" {% if key == periods.key %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-period', key.value) }}>{{ key.label|trans }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</nav>
+
+<h2 class="h4" {{ sylius_test_html_attribute('tmonier-insights-period-title') }}>
+    {{ 'tmonier_company_insights.ui.period_title'|trans({'%period%': periods.key.label|trans, '%from%': periods.current.from|format_date('medium'), '%to%': periods.current.lastDay|format_date('medium')}) }}
+</h2>
+<p>{{ 'tmonier_company_insights.ui.amounts_note'|trans }}</p>
+
+{% if dashboard.empty %}
+    <div class="alert alert-light border" role="status" {{ sylius_test_html_attribute('tmonier-insights-empty') }}>{{ 'tmonier_company_insights.ui.no_orders'|trans }}</div>
+{% endif %}
+
+<div class="row g-3 mb-4" {{ sylius_test_html_attribute('tmonier-insights-indicators') }}>
+    {% for currency in dashboard.currencies %}
+        <div class="col-12 col-md-6">
+            <section class="card h-100" aria-labelledby="insights-spend-{{ currency.currencyCode }}" {{ sylius_test_html_attribute('tmonier-insights-spend', currency.currencyCode) }}>
+                <div class="card-body">
+                    <h3 class="h6" id="insights-spend-{{ currency.currencyCode }}">{{ 'tmonier_company_insights.indicator.spend'|trans }}{% if dashboard.currencies|length > 1 %} ({{ currency.currencyCode }}){% endif %}</h3>
+                    <p class="display-6 mb-1" {{ sylius_test_html_attribute('tmonier-insights-value') }}>{{ currency.spend.value|sylius_format_money(currency.currencyCode, locale) }}</p>
+                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/variation.html.twig' with { indicator: currency.spend, previous: periods.previous } only %}
+                </div>
+            </section>
+        </div>
+    {% endfor %}
+    <div class="col-12 col-md-6">
+        <section class="card h-100" aria-labelledby="insights-orders" {{ sylius_test_html_attribute('tmonier-insights-orders') }}>
+            <div class="card-body">
+                <h3 class="h6" id="insights-orders">{{ 'tmonier_company_insights.indicator.orders'|trans }}</h3>
+                <p class="display-6 mb-1" {{ sylius_test_html_attribute('tmonier-insights-value') }}>{{ dashboard.ordersCount.value|format_number }}</p>
+                {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/variation.html.twig' with { indicator: dashboard.ordersCount, previous: periods.previous } only %}
+            </div>
+        </section>
+    </div>
+    {% for currency in dashboard.currencies %}
+        <div class="col-12 col-md-6">
+            <section class="card h-100" aria-labelledby="insights-average-{{ currency.currencyCode }}" {{ sylius_test_html_attribute('tmonier-insights-average', currency.currencyCode) }}>
+                <div class="card-body">
+                    <h3 class="h6" id="insights-average-{{ currency.currencyCode }}">{{ 'tmonier_company_insights.indicator.average_basket'|trans }}{% if dashboard.currencies|length > 1 %} ({{ currency.currencyCode }}){% endif %}</h3>
+                    <p class="display-6 mb-1" {{ sylius_test_html_attribute('tmonier-insights-value') }}>{{ currency.averageBasket.value|sylius_format_money(currency.currencyCode, locale) }}</p>
+                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/variation.html.twig' with { indicator: currency.averageBasket, previous: periods.previous } only %}
+                </div>
+            </section>
+        </div>
+    {% endfor %}
+    <div class="col-12 col-md-6">
+        <section class="card h-100" aria-labelledby="insights-buyers" {{ sylius_test_html_attribute('tmonier-insights-buyers') }}>
+            <div class="card-body">
+                <h3 class="h6" id="insights-buyers">{{ 'tmonier_company_insights.indicator.active_buyers'|trans }}</h3>
+                <p class="display-6 mb-1" {{ sylius_test_html_attribute('tmonier-insights-value') }}>{{ dashboard.activeBuyers.value|format_number }}</p>
+                {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/variation.html.twig' with { indicator: dashboard.activeBuyers, previous: periods.previous } only %}
+            </div>
+        </section>
+    </div>
+</div>
+
+<section aria-labelledby="insights-pending" class="card" {{ sylius_test_html_attribute('tmonier-insights-pending') }}>
+    <div class="card-body">
+        <h3 class="h6" id="insights-pending">{{ 'tmonier_company_insights.indicator.pending'|trans }}</h3>
+        {% if dashboard.pendingCount == 0 %}
+            <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-pending-none') }}>{{ 'tmonier_company_insights.ui.no_pending'|trans }}</p>
+        {% else %}
+            <p class="mb-1">
+                <span class="display-6" {{ sylius_test_html_attribute('tmonier-insights-pending-count') }}>{{ dashboard.pendingCount|format_number }}</span>
+                {{ 'tmonier_company_insights.ui.pending_orders'|trans({'%count%': dashboard.pendingCount}) }}
+            </p>
+            <ul class="mb-1">
+                {% for totals in dashboard.pending %}
+                    <li {{ sylius_test_html_attribute('tmonier-insights-pending-amount', totals.currencyCode) }}>{{ totals.spend|sylius_format_money(totals.currencyCode, locale) }}</li>
+                {% endfor %}
+            </ul>
+            <p class="mb-0">{{ 'tmonier_company_insights.ui.pending_note'|trans }}</p>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,30 @@
+tmonier_company_insights:
+    ui:
+        title: 'Purchasing dashboard'
+        period_selector: 'Period'
+        period_title: '%period%: %from% to %to%'
+        amounts_note: 'Amounts exclude tax. Cancelled orders are not counted.'
+        no_orders: 'No orders in this period.'
+        no_pending: 'No order is waiting for approval.'
+        pending_orders: '{1} order waiting for approval|]1,Inf[ orders waiting for approval'
+        pending_note: 'Amounts exclude tax. These orders are not part of the spend above until they are approved.'
+        forbidden_title: 'This page is reserved for company administrators'
+        forbidden_explanation: 'The purchasing dashboard shows how much your company spends. Ask an administrator of your company to give you the administrator role, or to share the figures with you.'
+        back_to_company: 'Back to my company'
+    period:
+        last_30_days: 'Last 30 days'
+        current_quarter: 'Current quarter'
+        last_12_months: 'Last 12 months'
+        current_year: 'Current year'
+    indicator:
+        spend: 'Spend (excl. tax)'
+        orders: 'Orders'
+        average_basket: 'Average basket (excl. tax)'
+        active_buyers: 'Active buyers'
+        pending: 'Waiting for approval'
+    variation:
+        versus: 'compared with %from% to %to%'
+        unknown: 'No comparison: nothing in the previous period.'
+        up: 'Increase'
+        down: 'Decrease'
+        flat: 'No change'

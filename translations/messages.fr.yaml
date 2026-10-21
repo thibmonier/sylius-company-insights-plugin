@@ -1,0 +1,30 @@
+tmonier_company_insights:
+    ui:
+        title: 'Tableau de bord des achats'
+        period_selector: 'Période'
+        period_title: '%period% : du %from% au %to%'
+        amounts_note: 'Montants hors taxes. Les commandes annulées ne sont pas comptées.'
+        no_orders: 'Aucune commande sur la période.'
+        no_pending: 'Aucune commande n''est en attente d''approbation.'
+        pending_orders: '{1} commande en attente d''approbation|]1,Inf[ commandes en attente d''approbation'
+        pending_note: 'Montants hors taxes. Ces commandes ne sont pas comptées dans la dépense ci-dessus tant qu''elles ne sont pas approuvées.'
+        forbidden_title: 'Cette page est réservée aux administrateurs de l''entreprise'
+        forbidden_explanation: 'Le tableau de bord des achats montre combien votre entreprise dépense. Demandez à un administrateur de votre entreprise de vous donner le rôle d''administrateur, ou de vous communiquer les chiffres.'
+        back_to_company: 'Retour à mon entreprise'
+    period:
+        last_30_days: '30 derniers jours'
+        current_quarter: 'Trimestre en cours'
+        last_12_months: '12 derniers mois'
+        current_year: 'Année en cours'
+    indicator:
+        spend: 'Dépense HT'
+        orders: 'Commandes'
+        average_basket: 'Panier moyen HT'
+        active_buyers: 'Acheteurs actifs'
+        pending: 'En attente d''approbation'
+    variation:
+        versus: 'par rapport au %from% au %to%'
+        unknown: 'Pas de comparaison : rien sur la période précédente.'
+        up: 'Hausse'
+        down: 'Baisse'
+        flat: 'Stable'

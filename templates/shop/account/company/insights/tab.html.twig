@@ -1,0 +1,6 @@
+{% set context = hookable_metadata.context %}
+{% if is_granted('COMPANY_VIEW_INSIGHTS', context.company) %}
+    <li class="nav-item">
+        <a class="nav-link {{ context.active_tab == 'insights' ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights') }}" {% if context.active_tab == 'insights' %}aria-current="page"{% endif %} {{ sylius_test_html_attribute('tmonier-company-insights-link') }}>{{ 'tmonier_company_insights.ui.title'|trans }}</a>
+    </li>
+{% endif %}
