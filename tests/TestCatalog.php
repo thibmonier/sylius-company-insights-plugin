@@ -73,7 +73,8 @@ final class TestCatalog
         /** @var FactoryInterface<ShopUserInterface> $userFactory */
         $userFactory = $this->container->get('sylius.factory.shop_user');
         $user = $userFactory->createNew();
-        $user->setPlainPassword('sylius');
+        // Random: the tests sign in with loginUser(), and no password literal is left for secret scanners.
+        $user->setPlainPassword(bin2hex(random_bytes(16)));
         $user->setEnabled(true);
         $user->setVerifiedAt(new \DateTime());
         $customer->setUser($user);
