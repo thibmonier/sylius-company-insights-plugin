@@ -11,6 +11,23 @@ tmonier_company_insights:
         forbidden_title: 'This page is reserved for company administrators'
         forbidden_explanation: 'The purchasing dashboard shows how much your company spends. Ask an administrator of your company to give you the administrator role, or to share the figures with you.'
         back_to_company: 'Back to my company'
+    monthly:
+        title: 'Purchases per month'
+        description: 'The last 12 months next to the same months of the previous year. Amounts exclude tax; each currency has its own series and is never converted.'
+        metric_selector: 'Figure shown in the chart'
+        table_caption: 'Purchases per month in %currency%, with the same month of the previous year'
+        month: 'Month'
+        spend: 'Spend (excl. tax)'
+        orders: 'Orders'
+        previous_spend: 'Spend, previous year'
+        previous_orders: 'Orders, previous year'
+        in_progress: 'in progress'
+        series_current: '%currency%, last 12 months'
+        series_previous: '%currency%, previous year'
+        note: 'The month in progress is not complete: do not compare it with the whole month of the previous year.'
+    metric:
+        amount: 'Spend (excl. tax)'
+        orders: 'Number of orders'
     period:
         last_30_days: 'Last 30 days'
         current_quarter: 'Current quarter'

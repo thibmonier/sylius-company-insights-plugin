@@ -24,6 +24,9 @@ sylius_twig_hooks:
             section:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/dashboard.html.twig'
                 priority: -10
+            monthly:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/monthly.html.twig'
+                priority: -20
 
         # Explained refusal.
         'tmonier_company_insights_shop.account.company.insights_forbidden.index.content':

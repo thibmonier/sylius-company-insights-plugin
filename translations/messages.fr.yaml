@@ -11,6 +11,23 @@ tmonier_company_insights:
         forbidden_title: 'Cette page est réservée aux administrateurs de l''entreprise'
         forbidden_explanation: 'Le tableau de bord des achats montre combien votre entreprise dépense. Demandez à un administrateur de votre entreprise de vous donner le rôle d''administrateur, ou de vous communiquer les chiffres.'
         back_to_company: 'Retour à mon entreprise'
+    monthly:
+        title: 'Achats par mois'
+        description: 'Les 12 derniers mois à côté des mêmes mois de l''année précédente. Montants hors taxes ; chaque devise a sa propre série et n''est jamais convertie.'
+        metric_selector: 'Donnée affichée dans le graphique'
+        table_caption: 'Achats par mois en %currency%, avec le même mois de l''année précédente'
+        month: 'Mois'
+        spend: 'Dépense HT'
+        orders: 'Commandes'
+        previous_spend: 'Dépense, année précédente'
+        previous_orders: 'Commandes, année précédente'
+        in_progress: 'en cours'
+        series_current: '%currency%, 12 derniers mois'
+        series_previous: '%currency%, année précédente'
+        note: 'Le mois en cours n''est pas terminé : ne le comparez pas au mois complet de l''année précédente.'
+    metric:
+        amount: 'Dépense HT'
+        orders: 'Nombre de commandes'
     period:
         last_30_days: '30 derniers jours'
         current_quarter: 'Trimestre en cours'

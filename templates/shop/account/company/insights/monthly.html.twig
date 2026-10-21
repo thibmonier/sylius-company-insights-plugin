@@ -1,0 +1,87 @@
+{#
+ # Purchases per month over 12 months, next to the same months of the previous year. The data table
+ # is the reference (it is what assistive technologies read); the bar chart is a progressive
+ # enhancement drawn from the data attributes by the Stimulus controller of the plugin, with no
+ # inline script and no external resource.
+ #}
+{% set context = hookable_metadata.context %}
+{% set monthly = context.monthly %}
+{% set metric = context.metric %}
+{% set locale = app.request.locale %}
+{% set period_key = context.dashboard.periods.key.value %}
+{% set categories = [] %}
+{% set chart_series = [] %}
+{% for series in monthly %}
+    {% set current = [] %}
+    {% set previous = [] %}
+    {% for point in series.points %}
+        {% set current = current|merge([(metric.value == 'orders' ? point.ordersCount : point.spend / 100)]) %}
+        {% set previous = previous|merge([(metric.value == 'orders' ? point.previousOrdersCount : point.previousSpend / 100)]) %}
+        {% if loop.parent.loop.first %}
+            {% set label = point.month|format_date(pattern: 'LLL y', timezone: point.timezoneName) %}
+            {% set categories = categories|merge([point.inProgress ? label ~ ' (' ~ 'tmonier_company_insights.monthly.in_progress'|trans ~ ')' : label]) %}
+        {% endif %}
+    {% endfor %}
+    {% set chart_series = chart_series|merge([
+        {name: 'tmonier_company_insights.monthly.series_current'|trans({'%currency%': series.currencyCode}), currency: series.currencyCode, previous: false, data: current},
+        {name: 'tmonier_company_insights.monthly.series_previous'|trans({'%currency%': series.currencyCode}), currency: series.currencyCode, previous: true, data: previous},
+    ]) %}
+{% endfor %}
+
+<section aria-labelledby="insights-monthly" class="card mt-4" {{ sylius_test_html_attribute('tmonier-insights-monthly') }}>
+    <div class="card-body">
+        <h3 class="h5" id="insights-monthly">{{ 'tmonier_company_insights.monthly.title'|trans }}</h3>
+        <p>{{ 'tmonier_company_insights.monthly.description'|trans }}</p>
+
+        <nav aria-label="{{ 'tmonier_company_insights.monthly.metric_selector'|trans }}" class="mb-3">
+            <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-metrics') }}>
+                {% for choice in context.metrics %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ choice == metric ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: period_key, metric: choice.value}) }}" {% if choice == metric %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-metric', choice.value) }}>{{ choice.label|trans }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+
+        {# The table below carries the same figures: the drawing is hidden from assistive technologies. #}
+        <div aria-hidden="true" class="mb-4"
+             data-controller="tmonier-insights-chart"
+             data-tmonier-insights-chart-categories-value="{{ categories|json_encode|e('html_attr') }}"
+             data-tmonier-insights-chart-series-value="{{ chart_series|json_encode|e('html_attr') }}"
+             data-tmonier-insights-chart-metric-value="{{ metric.value }}"
+             data-tmonier-insights-chart-locale-value="{{ locale|replace({'_': '-'}) }}"
+             {{ sylius_test_html_attribute('tmonier-insights-chart') }}></div>
+
+        {% for series in monthly %}
+            <div class="table-responsive mb-3">
+                <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-monthly-table', series.currencyCode) }}>
+                    <caption class="caption-top">{{ 'tmonier_company_insights.monthly.table_caption'|trans({'%currency%': series.currencyCode}) }}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'tmonier_company_insights.monthly.month'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.monthly.spend'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.monthly.orders'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.monthly.previous_spend'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.monthly.previous_orders'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for point in series.points %}
+                            <tr data-month="{{ point.month|date('Y-m', false) }}">
+                                <th scope="row">
+                                    {{ point.month|format_date(pattern: 'LLLL y', timezone: point.timezoneName) }}
+                                    {% if point.inProgress %}<span class="badge text-bg-secondary ms-1" {{ sylius_test_html_attribute('tmonier-insights-month-in-progress') }}>{{ 'tmonier_company_insights.monthly.in_progress'|trans }}</span>{% endif %}
+                                </th>
+                                <td class="text-end" data-value="{{ point.spend }}" {{ sylius_test_html_attribute('tmonier-insights-monthly-spend') }}>{{ point.spend|sylius_format_money(series.currencyCode, locale) }}</td>
+                                <td class="text-end" data-value="{{ point.ordersCount }}" {{ sylius_test_html_attribute('tmonier-insights-monthly-orders') }}>{{ point.ordersCount|format_number }}</td>
+                                <td class="text-end" data-value="{{ point.previousSpend }}" {{ sylius_test_html_attribute('tmonier-insights-monthly-previous-spend') }}>{{ point.previousSpend|sylius_format_money(series.currencyCode, locale) }}</td>
+                                <td class="text-end" data-value="{{ point.previousOrdersCount }}" {{ sylius_test_html_attribute('tmonier-insights-monthly-previous-orders') }}>{{ point.previousOrdersCount|format_number }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+        <p class="mb-0 small">{{ 'tmonier_company_insights.monthly.note'|trans }}</p>
+    </div>
+</section>

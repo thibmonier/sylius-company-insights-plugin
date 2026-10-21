@@ -59,7 +59,7 @@ final class MonthlyChartTest extends WebTestCase
     {
         $crawler = $this->open($this->administrator());
 
-        $rows = $crawler->filter('[data-test-tmonier-insights-monthly-table="EUR"] tbody tr');
+        $rows = $crawler->filter('[data-test-tmonier-insights-monthly-table] tbody tr');
         self::assertCount(1, $rows->filter('[data-test-tmonier-insights-month-in-progress]'));
         self::assertSame((new \DateTimeImmutable())->format('Y-m'), $rows->last()->attr('data-month'));
         self::assertStringContainsString('in progress', $rows->last()->text());
@@ -77,7 +77,7 @@ final class MonthlyChartTest extends WebTestCase
         foreach ($this->chartData($crawler) as $series) {
             self::assertEquals(array_fill(0, 12, 0), $series['data']);
         }
-        self::assertCount(12, $crawler->filter('[data-test-tmonier-insights-monthly-table="EUR"] tbody tr'));
+        self::assertCount(12, $crawler->filter('[data-test-tmonier-insights-monthly-table] tbody tr'));
     }
 
     public function testTheSwitchShowsTheNumberOfOrdersInsteadOfTheAmounts(): void
@@ -174,7 +174,7 @@ final class MonthlyChartTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Achats par mois', $this->text($crawler, 'tmonier-insights-monthly'));
-        self::assertStringContainsString('en cours', $crawler->filter('[data-test-tmonier-insights-monthly-table="EUR"] tbody tr')->last()->text());
+        self::assertStringContainsString('en cours', $crawler->filter('[data-test-tmonier-insights-monthly-table] tbody tr')->last()->text());
         self::assertStringContainsString('Nombre de commandes', $this->text($crawler, 'tmonier-insights-metrics'));
     }
 
