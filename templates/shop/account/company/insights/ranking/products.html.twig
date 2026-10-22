@@ -16,9 +16,8 @@
         </thead>
         <tbody>
             {% for row in ranking.rows %}
-                {% set name = [row.productName, row.variantName]|filter(part => part is not empty)|join(' - ') %}
                 <tr data-code="{{ row.code }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
-                    <th scope="row">{{ name is empty ? row.code : name }}</th>
+                    <th scope="row">{{ row.displayName }}</th>
                     <td>{{ row.code }}</td>
                     <td class="text-end">{{ row.quantity|format_number }}</td>
                     <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>

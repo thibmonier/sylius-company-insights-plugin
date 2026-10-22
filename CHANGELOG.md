@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-22
+
+### Fixed
+- Top products: a variant named like its product (the usual single-variant product) shows the product name once instead of "Gloves - Gloves"; names differing only by case or surrounding spaces count as the same.
+
+### Changed
+- CI: PHP 8.5 added to the matrix (Sylius 2.3, Symfony 8), actions pinned by commit SHA with read-only `permissions`, Dependabot watches the GitHub Actions.
+- README: screenshots of the dashboard (English and French).
+
 ## [0.1.0] - 2026-10-21
 
 ### Added
