@@ -2,7 +2,7 @@
 
 Purchasing dashboard for [Sylius](https://sylius.com) 2 B2B company accounts. The administrator of a company sees, in the customer account, how much the company spends and how fast it orders: spend, number of orders, average basket and active buyers of the chosen period, each with its variation against the previous period of the same duration, and the orders waiting for approval apart.
 
-Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmonier/sylius-company-accounts-plugin) (companies, members, roles, company orders). English | [Français](README.fr.md)
+Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (companies, members, roles, company orders). English | [Français](README.fr.md)
 
 ## What it does
 
@@ -34,6 +34,16 @@ Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmonier/s
 - **Amounts** are tax exclusive, in the currency of the order. With several currencies, there is one line per currency and nothing is converted.
 - Aggregates are computed by the database (no entity loaded) on plain SQL: MySQL, MariaDB and PostgreSQL.
 - Labels in English and French. The page does not rely on colour alone (arrows and sentences) and avoids low-contrast text classes.
+
+## Screenshots
+
+Demo data of [sylius-b2b-demo](https://github.com/thibmonier/sylius-b2b-demo), signed in as the administrator of the company.
+
+![Indicators of the last 12 months and purchases per month next to the previous year](docs/images/overview.en.jpg)
+
+![Top buyers with their spend, orders and share of the spend, a deactivated member included](docs/images/buyers.en.jpg)
+
+![Top categories: donut with fill patterns and its equivalent table](docs/images/categories.en.jpg)
 
 ## Installation
 
@@ -94,7 +104,7 @@ The Sylius shop access control must protect `^/(?:[a-z]{2,4}(?:_[A-Za-z]{2})?)/a
 
 ## Orders waiting for approval
 
-With [`tmonier/sylius-purchase-approval-plugin`](https://github.com/tmonier/sylius-purchase-approval-plugin) installed, the orders it holds are reported in their own block and are not part of the spend until an approver approves them. Without it, the block says that no order is waiting. There is no hard dependency: the integration is a port (`PendingOrderConditionInterface`) that you can implement for another approval workflow by redefining the service `tmonier_company_insights.pending_order_condition`.
+With [`tmonier/sylius-purchase-approval-plugin`](https://github.com/thibmonier/sylius-purchase-approval-plugin) installed, the orders it holds are reported in their own block and are not part of the spend until an approver approves them. Without it, the block says that no order is waiting. There is no hard dependency: the integration is a port (`PendingOrderConditionInterface`) that you can implement for another approval workflow by redefining the service `tmonier_company_insights.pending_order_condition`.
 
 ## Supported versions (PHP, Symfony, Sylius) and impact of version
 

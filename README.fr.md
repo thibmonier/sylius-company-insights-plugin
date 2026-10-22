@@ -2,7 +2,7 @@
 
 Tableau de bord des achats pour les comptes entreprise B2B de [Sylius](https://sylius.com) 2. L'administrateur d'une entreprise voit, dans l'espace client, combien son entreprise dépense et à quel rythme elle commande : dépense, nombre de commandes, panier moyen et acheteurs actifs de la période choisie, chacun avec sa variation par rapport à la période précédente de même durée, et les commandes en attente d'approbation à part.
 
-Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmonier/sylius-company-accounts-plugin) (entreprises, membres, rôles, commandes de l'entreprise). [English](README.md) | Français
+Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (entreprises, membres, rôles, commandes de l'entreprise). [English](README.md) | Français
 
 ## Ce qu'il fait
 
@@ -34,6 +34,16 @@ Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/tmon
 - **Montants** hors taxes, dans la devise de la commande. Avec plusieurs devises, il y a une ligne par devise et rien n'est converti.
 - Les agrégats sont calculés par la base de données (aucune entité chargée) en SQL standard : MySQL, MariaDB et PostgreSQL.
 - Libellés en français et en anglais. La page ne repose pas sur la couleur seule (flèches et phrases) et évite les classes de texte peu contrastées.
+
+## Captures d'écran
+
+Données de démonstration de [sylius-b2b-demo](https://github.com/thibmonier/sylius-b2b-demo), connecté en administratrice de l'entreprise.
+
+![Indicateurs des 12 derniers mois et achats par mois face à l'année précédente](docs/images/overview.fr.jpg)
+
+![Top acheteurs avec leur dépense, leurs commandes et leur part de la dépense, membre désactivé compris](docs/images/buyers.fr.jpg)
+
+![Top catégories : anneau à motifs et tableau équivalent](docs/images/categories.fr.jpg)
 
 ## Installation
 
@@ -94,7 +104,7 @@ Le contrôle d'accès de la boutique Sylius doit protéger `^/(?:[a-z]{2,4}(?:_[
 
 ## Commandes en attente d'approbation
 
-Avec [`tmonier/sylius-purchase-approval-plugin`](https://github.com/tmonier/sylius-purchase-approval-plugin) installé, les commandes qu'il retient apparaissent dans leur propre bloc et ne comptent pas dans la dépense tant qu'un approbateur ne les a pas approuvées. Sans lui, le bloc indique qu'aucune commande n'est en attente. Il n'y a pas de dépendance dure : l'intégration est un port (`PendingOrderConditionInterface`) que l'on peut implémenter pour un autre circuit d'approbation en redéfinissant le service `tmonier_company_insights.pending_order_condition`.
+Avec [`tmonier/sylius-purchase-approval-plugin`](https://github.com/thibmonier/sylius-purchase-approval-plugin) installé, les commandes qu'il retient apparaissent dans leur propre bloc et ne comptent pas dans la dépense tant qu'un approbateur ne les a pas approuvées. Sans lui, le bloc indique qu'aucune commande n'est en attente. Il n'y a pas de dépendance dure : l'intégration est un port (`PendingOrderConditionInterface`) que l'on peut implémenter pour un autre circuit d'approbation en redéfinissant le service `tmonier_company_insights.pending_order_condition`.
 
 ## Versions supportées (PHP, Symfony, Sylius) et impact de version
 
