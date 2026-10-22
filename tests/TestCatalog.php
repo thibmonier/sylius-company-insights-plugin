@@ -271,18 +271,18 @@ final class TestCatalog
         $total = (int) $connection->fetchOne('SELECT total FROM sylius_order WHERE id = ?', [$seed->getId()]);
         $created = (new \DateTimeImmutable($createdAt))->format('Y-m-d H:i:s');
         $decided = null === $decidedAt ? null : (new \DateTimeImmutable($decidedAt))->format('Y-m-d H:i:s');
-        $select = implode(', ', array_map(static fn (string $name): string => match ($name) {
-            'number' => 'CONCAT(number, :suffix)',
-            'token_value' => 'CONCAT(token_value, :suffix)',
-            default => $name,
-        }, $columns));
         $connection->beginTransaction();
         for ($index = 0; $index < $count; ++$index) {
             $id = $this->explicitId('sylius_order');
-            $suffix = sprintf('-c%d', ++$this->sequence);
+            // A quoted literal, not a parameter: PostgreSQL cannot infer the type of a bound value inside CONCAT().
+            $suffix = $connection->quote(sprintf('-c%d', ++$this->sequence));
+            $select = implode(', ', array_map(static fn (string $name): string => match ($name) {
+                'number', 'token_value' => sprintf('CONCAT(%s, %s)', $name, $suffix),
+                default => $name,
+            }, $columns));
             $connection->executeStatement(
                 sprintf('INSERT INTO sylius_order (%s) SELECT %s FROM sylius_order WHERE id = :seed', implode(', ', [...array_keys($id), ...$columns]), implode(', ', [...array_map(static fn (int $value): string => (string) $value, $id), ...[$select]])),
-                ['seed' => $seed->getId(), 'suffix' => $suffix],
+                ['seed' => $seed->getId()],
             );
             $orderId = (int) ($id['id'] ?? $connection->lastInsertId());
             $connection->insert('tmonier_company_order', [...$this->explicitId('tmonier_company_order'), 'company_id' => $companyId, 'order_id' => $orderId, 'created_at' => $created]);
