@@ -109,6 +109,10 @@ Données de démonstration de [sylius-b2b-demo](https://github.com/thibmonier/sy
 
 ![Top catégories : anneau à motifs et tableau équivalent](docs/images/categories.fr.jpg)
 
+![Achats par site de livraison et par axe analytique, avec la part de la dépense](docs/images/breakdown.fr.jpg)
+
+![Widgets Approbations et Encours du tableau de bord](docs/images/widgets.fr.jpg)
+
 ## Installation
 
 ```bash

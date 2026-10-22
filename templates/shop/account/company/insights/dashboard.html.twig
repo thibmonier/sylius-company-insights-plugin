@@ -48,9 +48,9 @@
             <label for="insights-filter-to" class="form-label">{{ 'tmonier_company_insights.filter.to'|trans }}</label>
             <input type="date" id="insights-filter-to" name="to" class="form-control" min="2000-01-01" value="{{ selection.custom ? periods.current.lastDay|date('Y-m-d', false) }}" {{ sylius_test_html_attribute('tmonier-insights-filter-to') }}>
         </div>
-        <div class="col-12 col-lg-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary" {{ sylius_test_html_attribute('tmonier-insights-filter-apply') }}>{{ 'tmonier_company_insights.filter.apply'|trans }}</button>
-            <a class="btn btn-outline-secondary" href="{{ path('tmonier_company_insights_shop_insights') }}" {{ sylius_test_html_attribute('tmonier-insights-filter-reset') }}>{{ 'tmonier_company_insights.filter.reset'|trans }}</a>
+        <div class="col-12 col-lg-auto d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary text-wrap" {{ sylius_test_html_attribute('tmonier-insights-filter-apply') }}>{{ 'tmonier_company_insights.filter.apply'|trans }}</button>
+            <a class="btn btn-outline-secondary text-wrap" href="{{ path('tmonier_company_insights_shop_insights') }}" {{ sylius_test_html_attribute('tmonier-insights-filter-reset') }}>{{ 'tmonier_company_insights.filter.reset'|trans }}</a>
         </div>
     </div>
     <p class="form-text mb-0 mt-2">{{ 'tmonier_company_insights.filter.help'|trans }}</p>

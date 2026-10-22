@@ -2,30 +2,33 @@
  # Table of the buyers. Context: ranking (Ranking of BuyerRow), locale. Only the first and the last
  # name of a member are shown, never an e-mail address; a member deactivated since is marked.
  #}
-<div class="table-responsive">
-    <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'buyers') }}>
-        <caption class="caption-top">{{ 'tmonier_company_insights.ranking.buyers.caption'|trans({'%currency%': ranking.currencyCode}) }}</caption>
-        <thead>
-            <tr>
-                <th scope="col">{{ 'tmonier_company_insights.ranking.column.member'|trans }}</th>
-                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
-                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.orders'|trans }}</th>
-                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in ranking.rows %}
-                {% set name = ((row.firstName ?? '') ~ ' ' ~ (row.lastName ?? ''))|trim %}
-                <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
-                    <th scope="row">
-                        {{ name is empty ? 'tmonier_company_insights.ranking.buyers.unknown'|trans : name }}
-                        {% if not row.active %}<span class="badge border border-dark text-dark fw-normal ms-1" {{ sylius_test_html_attribute('tmonier-insights-deactivated') }}>{{ 'tmonier_company_insights.ranking.buyers.deactivated'|trans }}</span>{% endif %}
-                    </th>
-                    <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
-                    <td class="text-end">{{ row.ordersCount|format_number }}</td>
-                    <td class="text-end" data-value="{{ ranking.shares[loop.index0] }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.shares[loop.index0] / 100)|format_percent_number }}</td>
+{% set table_label = 'tmonier_company_insights.ranking.buyers.caption'|trans({'%currency%': ranking.currencyCode}) %}
+{% embed '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/table_region.html.twig' with {label: table_label} %}
+    {% block table %}
+        <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'buyers') }}>
+            <caption class="caption-top">{{ table_label }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'tmonier_company_insights.ranking.column.member'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.orders'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+                {% for row in ranking.rows %}
+                    {% set name = ((row.firstName ?? '') ~ ' ' ~ (row.lastName ?? ''))|trim %}
+                    <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
+                        <th scope="row">
+                            {{ name is empty ? 'tmonier_company_insights.ranking.buyers.unknown'|trans : name }}
+                            {% if not row.active %}<span class="badge border border-dark text-dark fw-normal ms-1" {{ sylius_test_html_attribute('tmonier-insights-deactivated') }}>{{ 'tmonier_company_insights.ranking.buyers.deactivated'|trans }}</span>{% endif %}
+                        </th>
+                        <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                        <td class="text-end">{{ row.ordersCount|format_number }}</td>
+                        <td class="text-end" data-value="{{ ranking.shares[loop.index0] }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.shares[loop.index0] / 100)|format_percent_number }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+{% endembed %}

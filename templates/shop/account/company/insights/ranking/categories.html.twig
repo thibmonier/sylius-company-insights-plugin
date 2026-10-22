@@ -31,31 +31,34 @@
          {{ sylius_test_html_attribute('tmonier-insights-donut') }}></div>
 {% endif %}
 
-<div class="table-responsive">
-    <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'categories') }}>
-        <caption class="caption-top">{{ 'tmonier_company_insights.ranking.categories.caption'|trans({'%currency%': ranking.currencyCode}) }}</caption>
-        <thead>
-            <tr>
-                <th scope="col">{{ 'tmonier_company_insights.ranking.column.category'|trans }}</th>
-                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
-                <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in ranking.rows %}
-                <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
-                    <th scope="row">{{ names[loop.index0] }}</th>
-                    <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
-                    <td class="text-end" data-value="{{ ranking.shares[loop.index0] }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.shares[loop.index0] / 100)|format_percent_number }}</td>
+{% set table_label = 'tmonier_company_insights.ranking.categories.caption'|trans({'%currency%': ranking.currencyCode}) %}
+{% embed '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/table_region.html.twig' with {label: table_label} %}
+    {% block table %}
+        <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-ranking-table', 'categories') }}>
+            <caption class="caption-top">{{ table_label }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'tmonier_company_insights.ranking.column.category'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
                 </tr>
-            {% endfor %}
-            {% if others %}
-                <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-others') }}>
-                    <th scope="row">{{ 'tmonier_company_insights.ranking.categories.others'|trans }}</th>
-                    <td class="text-end">{{ ranking.othersSpend|sylius_format_money(ranking.currencyCode, locale) }}</td>
-                    <td class="text-end" data-value="{{ ranking.othersShare }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.othersShare / 100)|format_percent_number }}</td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+                {% for row in ranking.rows %}
+                    <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-row') }}>
+                        <th scope="row">{{ names[loop.index0] }}</th>
+                        <td class="text-end">{{ row.spend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                        <td class="text-end" data-value="{{ ranking.shares[loop.index0] }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.shares[loop.index0] / 100)|format_percent_number }}</td>
+                    </tr>
+                {% endfor %}
+                {% if others %}
+                    <tr {{ sylius_test_html_attribute('tmonier-insights-ranking-others') }}>
+                        <th scope="row">{{ 'tmonier_company_insights.ranking.categories.others'|trans }}</th>
+                        <td class="text-end">{{ ranking.othersSpend|sylius_format_money(ranking.currencyCode, locale) }}</td>
+                        <td class="text-end" data-value="{{ ranking.othersShare }}" {{ sylius_test_html_attribute('tmonier-insights-ranking-share') }}>{{ (ranking.othersShare / 100)|format_percent_number }}</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% endblock %}
+{% endembed %}
