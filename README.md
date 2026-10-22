@@ -113,8 +113,6 @@ Demo data of [sylius-b2b-demo](https://github.com/thibmonier/sylius-b2b-demo), s
 
 ![Approvals and Credit widgets of the dashboard](docs/images/widgets.en.jpg)
 
-![The CSV export button of the selection](docs/images/export.en.jpg)
-
 ## Installation
 
 ```bash

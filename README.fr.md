@@ -113,8 +113,6 @@ Données de démonstration de [sylius-b2b-demo](https://github.com/thibmonier/sy
 
 ![Widgets Approbations et Encours du tableau de bord](docs/images/widgets.fr.jpg)
 
-![Bouton d'export CSV de la sélection](docs/images/export.fr.jpg)
-
 ## Installation
 
 ```bash
