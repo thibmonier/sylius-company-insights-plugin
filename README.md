@@ -81,7 +81,7 @@ final class CostCenterDimension implements OrderDimensionProviderInterface
 }
 ```
 
-Services implementing `OrderDimensionProviderInterface` or `OrderReferenceProviderInterface` are tagged by autoconfiguration (`tmonier_company_insights.order_dimension_provider`, `tmonier_company_insights.order_reference_provider`); tag them by hand otherwise. A dimension returns the value for the orders it is asked about (never more than 1 000 ids at a time) and nothing is assumed about where it comes from. An order without value is gathered under "Not set". A provider that raises is logged and its block is left out; the rest of the page stays. Only the first reference provider is used.
+Services implementing `OrderDimensionProviderInterface` or `OrderReferenceProviderInterface` are tagged by autoconfiguration (`tmonier_company_insights.order_dimension_provider`, `tmonier_company_insights.order_reference_provider`); tag them by hand otherwise. A dimension returns the value for the orders it is asked about (never more than 1 000 ids at a time) and nothing is assumed about where it comes from. An order without value is gathered under "Not set". A provider that raises is logged and its block is left out; the rest of the page stays. With several reference providers, each order takes the first non-empty reference in the order of the services (tag `priority`, highest first).
 
 ## Widgets of the companion plugins
 

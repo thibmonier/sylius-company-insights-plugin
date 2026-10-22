@@ -115,6 +115,7 @@ return static function (ContainerConfigurator $container): void {
             tagged_iterator('tmonier_company_insights.order_dimension_provider'),
             tagged_iterator('tmonier_company_insights.order_reference_provider'),
             service('logger'),
+            service('clock'),
         ])
     ;
 

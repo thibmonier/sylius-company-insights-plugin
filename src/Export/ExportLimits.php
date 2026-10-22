@@ -18,6 +18,18 @@ final class ExportLimits
 
     public static function allowsPeriod(Period $period): bool
     {
-        return $period->from->modify(sprintf('+%d months', self::MAX_MONTHS)) >= $period->to;
+        return self::lastAllowedEnd($period->from) >= $period->to;
+    }
+
+    /** From plus 24 calendar months; the 29 February ends on 28 February instead of overflowing to 1 March. */
+    private static function lastAllowedEnd(\DateTimeImmutable $from): \DateTimeImmutable
+    {
+        $firstOfMonth = $from->modify('first day of this month')->modify(sprintf('+%d months', self::MAX_MONTHS));
+
+        return $firstOfMonth->setDate(
+            (int) $firstOfMonth->format('Y'),
+            (int) $firstOfMonth->format('n'),
+            min((int) $from->format('j'), (int) $firstOfMonth->format('t')),
+        );
     }
 }

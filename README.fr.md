@@ -81,7 +81,7 @@ final class CostCenterDimension implements OrderDimensionProviderInterface
 }
 ```
 
-Les services qui implémentent `OrderDimensionProviderInterface` ou `OrderReferenceProviderInterface` sont étiquetés par autoconfiguration (`tmonier_company_insights.order_dimension_provider`, `tmonier_company_insights.order_reference_provider`) ; sinon, étiquetez-les à la main. Un axe renvoie la valeur des commandes demandées (1 000 identifiants au plus à la fois) et rien ne suppose d'où elle vient. Une commande sans valeur est regroupée sous « Non renseigné ». Un fournisseur qui lève une exception est journalisé et son bloc est omis ; le reste de la page demeure. Seul le premier fournisseur de référence est utilisé.
+Les services qui implémentent `OrderDimensionProviderInterface` ou `OrderReferenceProviderInterface` sont étiquetés par autoconfiguration (`tmonier_company_insights.order_dimension_provider`, `tmonier_company_insights.order_reference_provider`) ; sinon, étiquetez-les à la main. Un axe renvoie la valeur des commandes demandées (1 000 identifiants au plus à la fois) et rien ne suppose d'où elle vient. Une commande sans valeur est regroupée sous « Non renseigné ». Un fournisseur qui lève une exception est journalisé et son bloc est omis ; le reste de la page demeure. Avec plusieurs fournisseurs de référence, chaque commande prend la première référence non vide dans l'ordre des services (`priority` de l'étiquette, la plus haute d'abord).
 
 ## Widgets des plugins compagnons
 

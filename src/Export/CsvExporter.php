@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Export;
 
+use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderDimensionProviderInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderReferenceProviderInterface;
@@ -24,6 +26,8 @@ final readonly class CsvExporter
 
     private LoggerInterface $logger;
 
+    private ClockInterface $clock;
+
     /**
      * @param iterable<OrderDimensionProviderInterface> $dimensionProviders
      * @param iterable<OrderReferenceProviderInterface> $referenceProviders
@@ -34,8 +38,10 @@ final readonly class CsvExporter
         private iterable $dimensionProviders = [],
         private iterable $referenceProviders = [],
         ?LoggerInterface $logger = null,
+        ?ClockInterface $clock = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
+        $this->clock = $clock ?? new NativeClock();
     }
 
     /** @throws ExportRefused */
@@ -77,7 +83,7 @@ final readonly class CsvExporter
             'period_from' => $request->period->from->format('Y-m-d'),
             'period_to' => $request->period->lastDay()->format('Y-m-d'),
             'lines' => $written,
-            'at' => (new \DateTimeImmutable())->format(\DATE_ATOM),
+            'at' => $this->clock->now()->format(\DATE_ATOM),
         ]);
 
         return $written;
@@ -104,17 +110,29 @@ final readonly class CsvExporter
     }
 
     /**
+     * The reference of each order is the first non-empty one in the order of the providers (priority of the tag),
+     * each provider being asked only for the orders still without reference.
+     *
      * @param list<int> $ids
      *
-     * @return array<int, string|null>
+     * @return array<int, string>
      */
     private function references(array $ids): array
     {
+        $references = [];
         foreach ($this->referenceProviders as $provider) {
-            return $provider->references($ids);
+            $missing = array_values(array_filter($ids, static fn (int $id): bool => !isset($references[$id])));
+            if ([] === $missing) {
+                break;
+            }
+            foreach ($provider->references($missing) as $id => $reference) {
+                if (is_string($reference) && '' !== trim($reference)) {
+                    $references[$id] ??= $reference;
+                }
+            }
         }
 
-        return [];
+        return $references;
     }
 
     /**

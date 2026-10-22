@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Tmonier\SyliusCompanyInsightsPlugin\Integration;
 
+use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Export\CsvExporter;
@@ -138,6 +140,34 @@ final class CsvExportTest extends KernelTestCase
         self::assertSame('PO-2026-0042', $rows[1][2]);
     }
 
+    public function testEachOrderTakesTheFirstNonEmptyReferenceInTheOrderOfTheProviders(): void
+    {
+        $company = $this->catalog()->company();
+        $claire = $this->catalog()->customer('claire', 'Claire', 'Martin');
+        $this->catalog()->member($company, $claire);
+        $variant = $this->catalog()->product('VIS-001', ['en_US' => 'Screw']);
+        $both = $this->catalog()->orderOfLines($claire, [[$variant, 1, 1_000]], '2026-10-02 10:00:00');
+        $onlySecond = $this->catalog()->orderOfLines($claire, [[$variant, 1, 1_000]], '2026-10-03 10:00:00');
+        $emptyFirst = $this->catalog()->orderOfLines($claire, [[$variant, 1, 1_000]], '2026-10-04 10:00:00');
+        $first = new FakeReferenceProvider([$this->catalog()->id($both) => 'FIRST-1', $this->catalog()->id($emptyFirst) => '  ']);
+        $second = new FakeReferenceProvider([$this->catalog()->id($both) => 'SECOND-1', $this->catalog()->id($onlySecond) => 'SECOND-2', $this->catalog()->id($emptyFirst) => 'SECOND-3']);
+
+        $rows = $this->rows($this->export($company, references: [$first, $second]));
+
+        $byNumber = array_column(array_slice($rows, 1), 2, 1);
+        self::assertSame('FIRST-1', $byNumber[$both->getNumber()]);
+        self::assertSame('SECOND-2', $byNumber[$onlySecond->getNumber()]);
+        self::assertSame('SECOND-3', $byNumber[$emptyFirst->getNumber()]);
+    }
+
+    public function testTheLogDateComesFromTheInjectedClock(): void
+    {
+        $company = $this->catalog()->company();
+        $this->export($company, clock: new MockClock('2026-10-22 08:15:00'));
+
+        self::assertSame((new \DateTimeImmutable('2026-10-22 08:15:00'))->format(\DATE_ATOM), $this->logger->records[0]['context']['at']);
+    }
+
     public function testAPeriodOfThirtySixMonthsIsRefusedBeforeAnyOutput(): void
     {
         $company = $this->catalog()->company();
@@ -224,11 +254,11 @@ final class CsvExportTest extends KernelTestCase
      * @param list<FakeReferenceProvider> $references
      * @param list<FakeDimensionProvider> $dimensions
      */
-    private function export(CompanyInterface $company, PurchaseFilter $filter = new PurchaseFilter(), array $references = [], array $dimensions = []): string
+    private function export(CompanyInterface $company, PurchaseFilter $filter = new PurchaseFilter(), array $references = [], array $dimensions = [], ?ClockInterface $clock = null): string
     {
         $stream = fopen('php://memory', 'w+');
         Assert::resource($stream);
-        $this->exporter($references, $dimensions)->write($this->request($company, $filter), $stream);
+        $this->exporter($references, $dimensions, $clock)->write($this->request($company, $filter), $stream);
         rewind($stream);
         $output = stream_get_contents($stream);
         Assert::string($output);
@@ -247,12 +277,12 @@ final class CsvExportTest extends KernelTestCase
      * @param list<FakeReferenceProvider> $references
      * @param list<FakeDimensionProvider> $dimensions
      */
-    private function exporter(array $references = [], array $dimensions = []): CsvExporter
+    private function exporter(array $references = [], array $dimensions = [], ?ClockInterface $clock = null): CsvExporter
     {
         $lines = $this->service('tmonier_company_insights.test.export.lines', ExportLinesInterface::class);
         $this->logger = new RecordingLogger();
 
-        return new CsvExporter($lines, $this->translator(), $dimensions, $references, $this->logger);
+        return new CsvExporter($lines, $this->translator(), $dimensions, $references, $this->logger, $clock);
     }
 
     private function translator(): TranslatorInterface
