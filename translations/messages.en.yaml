@@ -112,11 +112,11 @@ tmonier_company_insights:
         unavailable: 'Data temporarily unavailable.'
         approvals:
             title: 'Approvals'
-            description: 'How the approval of orders goes in your company over the period shown. Amounts of the requests include tax, as the approvers see them.'
+            description: 'How the approval of orders goes in your company over the period shown. Amounts exclude tax, like the rest of the dashboard; the period is the one of the checkout of the orders.'
             pending: 'Waiting now'
             pending_caption: 'Orders waiting for approval, the oldest first'
             oldest: 'The oldest has been waiting for %days% day(s).'
-            amount: 'Amount (incl. tax)'
+            amount: 'Amount (excl. tax)'
             waiting: 'Waiting'
             days: '{0} Today|{1} 1 day|]1,Inf[ %count% days'
             decisions: 'Decisions of the period'

@@ -8,6 +8,13 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingScope;
 
+/**
+ * Known bound: the spend of every counted order of the selection (id => tax-exclusive amount, integers only) is
+ * read in one query and kept in memory, because the analytical axes come from the application, which labels
+ * orders by id and cannot be grouped in SQL here. An order costs a few dozen bytes, so a selection of some
+ * hundreds of thousands of orders stays within a few tens of MB; the values of the axes are requested by
+ * chunks of 1 000 ids. Nothing is truncated. The sites breakdown has no such bound (grouped in SQL).
+ */
 final readonly class BreakdownProvider
 {
     private const CHUNK = 1000;

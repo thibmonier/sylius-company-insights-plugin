@@ -155,9 +155,10 @@ final class CsvExportTest extends KernelTestCase
         $rows = $this->rows($this->export($company, references: [$first, $second]));
 
         $byNumber = array_column(array_slice($rows, 1), 2, 1);
-        self::assertSame('FIRST-1', $byNumber[$both->getNumber()]);
-        self::assertSame('SECOND-2', $byNumber[$onlySecond->getNumber()]);
-        self::assertSame('SECOND-3', $byNumber[$emptyFirst->getNumber()]);
+        self::assertCount(3, $byNumber);
+        self::assertSame('FIRST-1', $byNumber[(string) $both->getNumber()]);
+        self::assertSame('SECOND-2', $byNumber[(string) $onlySecond->getNumber()]);
+        self::assertSame('SECOND-3', $byNumber[(string) $emptyFirst->getNumber()]);
     }
 
     public function testTheLogDateComesFromTheInjectedClock(): void

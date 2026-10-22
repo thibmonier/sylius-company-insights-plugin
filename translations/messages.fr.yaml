@@ -112,11 +112,11 @@ tmonier_company_insights:
         unavailable: 'Données momentanément indisponibles.'
         approvals:
             title: 'Approbations'
-            description: "Comment se passe l'approbation des commandes dans votre entreprise sur la période affichée. Les montants des demandes sont TTC, comme les voient les approbateurs."
+            description: "Comment se passe l'approbation des commandes dans votre entreprise sur la période affichée. Les montants sont HT, comme le reste du tableau de bord ; la période est celle de la validation des commandes."
             pending: "En attente maintenant"
             pending_caption: "Commandes en attente d'approbation, la plus ancienne en tête"
             oldest: "La plus ancienne attend depuis %days% jour(s)."
-            amount: 'Montant (TTC)'
+            amount: 'Montant (HT)'
             waiting: 'Attente'
             days: "{0} Aujourd'hui|{1} 1 jour|]1,Inf[ %count% jours"
             decisions: 'Décisions de la période'

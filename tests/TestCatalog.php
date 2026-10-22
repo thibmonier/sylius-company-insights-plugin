@@ -256,6 +256,44 @@ final class TestCatalog
      * The credit line of the company (the account of the trade credit plugin is owned by the company), written
      * directly: the plugin offers no setter for the amount in use.
      */
+    /**
+     * Copies a completed order of a company $count times, each copy with its own approval, by SQL: a volume
+     * that creating the orders one by one through Doctrine would make too slow.
+     */
+    public function cloneApprovals(OrderInterface $seed, int $count, string $state, string $createdAt, ?string $decidedAt = null): void
+    {
+        $connection = $this->connection();
+        $columns = array_values(array_filter(
+            array_map(static fn (\Doctrine\DBAL\Schema\Column $column): string => $column->getName(), $connection->createSchemaManager()->listTableColumns('sylius_order')),
+            static fn (string $name): bool => 'id' !== $name,
+        ));
+        $companyId = $connection->fetchOne('SELECT company_id FROM tmonier_company_order WHERE order_id = ?', [$seed->getId()]);
+        $total = (int) $connection->fetchOne('SELECT total FROM sylius_order WHERE id = ?', [$seed->getId()]);
+        $created = (new \DateTimeImmutable($createdAt))->format('Y-m-d H:i:s');
+        $decided = null === $decidedAt ? null : (new \DateTimeImmutable($decidedAt))->format('Y-m-d H:i:s');
+        $select = implode(', ', array_map(static fn (string $name): string => match ($name) {
+            'number' => 'CONCAT(number, :suffix)',
+            'token_value' => 'CONCAT(token_value, :suffix)',
+            default => $name,
+        }, $columns));
+        $connection->beginTransaction();
+        for ($index = 0; $index < $count; ++$index) {
+            $id = $this->explicitId('sylius_order');
+            $suffix = sprintf('-c%d', ++$this->sequence);
+            $connection->executeStatement(
+                sprintf('INSERT INTO sylius_order (%s) SELECT %s FROM sylius_order WHERE id = :seed', implode(', ', [...array_keys($id), ...$columns]), implode(', ', [...array_map(static fn (int $value): string => (string) $value, $id), ...[$select]])),
+                ['seed' => $seed->getId(), 'suffix' => $suffix],
+            );
+            $orderId = (int) ($id['id'] ?? $connection->lastInsertId());
+            $connection->insert('tmonier_company_order', [...$this->explicitId('tmonier_company_order'), 'company_id' => $companyId, 'order_id' => $orderId, 'created_at' => $created]);
+            $connection->insert('tmonier_purchase_approval_order_approval', [
+                'order_id' => $orderId, 'company_id' => $companyId, 'state' => $state, 'total' => $total,
+                'currency_code' => $seed->getCurrencyCode(), 'created_at' => $created, 'decided_at' => $decided,
+            ]);
+        }
+        $connection->commit();
+    }
+
     public function tradeCreditAccount(CompanyInterface $company, int $limit, int $committed, string $currency = 'EUR', bool $hold = false): int
     {
         $this->connection()->insert('tmonier_trade_credit_account', [

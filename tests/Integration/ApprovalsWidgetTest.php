@@ -69,6 +69,17 @@ final class ApprovalsWidgetTest extends KernelTestCase
         self::assertSame(0, $this->at($data, 'pending', 'count'));
     }
 
+    public function testTheMedianOfAnEvenNumberOfDecisionsIsTheMeanOfTheTwoMiddleOnes(): void
+    {
+        [$company, $admin] = $this->company();
+        $claire = $this->buyer($company, 'Claire', 'Martin');
+        foreach (['+1 hour', '+2 hours', '+6 hours', '+30 hours'] as $delay) {
+            $this->catalog()->pendingApproval($this->catalog()->order($claire, 10_000, '-3 days'), 'approved', '-3 days', (new \DateTimeImmutable('-3 days'))->modify($delay)->format('Y-m-d H:i:s'));
+        }
+
+        self::assertSame(4 * 3600, $this->at($this->widget($company, $admin)->data, 'median_seconds'));
+    }
+
     public function testExpiredAndCancelledRequestsAreNotDecisionsOfAnApprover(): void
     {
         [$company, $admin] = $this->company();
@@ -104,6 +115,53 @@ final class ApprovalsWidgetTest extends KernelTestCase
         self::assertSame([4, 1], $this->column($buyers, 'approvals'));
         self::assertSame([5, 10], $this->column($buyers, 'orders'));
         self::assertSame([80, 10], $this->column($buyers, 'rate'));
+    }
+
+    public function testAmountsAreTaxExclusiveLikeTheRestOfTheDashboard(): void
+    {
+        [$company, $admin] = $this->company();
+        $claire = $this->buyer($company, 'Claire', 'Martin');
+        $this->catalog()->pendingApproval($this->catalog()->order($claire, 24_000, '-4 days', tax: 4_000), createdAt: '-4 days');
+        $this->catalog()->pendingApproval($this->catalog()->order($claire, 12_000, '-2 days', unitTax: 2_000), createdAt: '-2 days');
+
+        $data = $this->widget($company, $admin)->data;
+
+        self::assertSame(['EUR' => 30_000], $this->at($data, 'pending', 'amounts'));
+        self::assertSame([20_000, 10_000], $this->column($this->at($data, 'pending', 'items'), 'amount'));
+    }
+
+    public function testThePeriodIsTheOneOfTheCheckoutOfTheOrderNotTheCreationOfTheApproval(): void
+    {
+        [$company, $admin] = $this->company();
+        $claire = $this->buyer($company, 'Claire', 'Martin');
+        $this->catalog()->pendingApproval($this->catalog()->order($claire, 10_000, '-200 days'), 'rejected', '-5 days', '-4 days');
+        $this->catalog()->pendingApproval($this->catalog()->order($claire, 10_000, '-5 days'), 'approved', '-200 days', '-199 days');
+
+        $data = $this->widget($company, $admin, new Period(new \DateTimeImmutable('-30 days'), new \DateTimeImmutable('+1 day')))->data;
+
+        self::assertSame(1, $this->at($data, 'decided'));
+        self::assertSame(0, $this->at($data, 'refused'));
+        self::assertSame(1, $this->at($data, 'buyers', 0, 'approvals'));
+    }
+
+    public function testNothingIsCappedBeyondTwoThousandApprovals(): void
+    {
+        [$company, $admin] = $this->company();
+        $claire = $this->buyer($company, 'Claire', 'Martin');
+        $seed = $this->catalog()->order($claire, 10_000, '-3 days');
+        $this->catalog()->pendingApproval($seed, 'approved', '-3 days', '-3 days +1 hour');
+        $this->catalog()->cloneApprovals($seed, 2_100, 'rejected', '-3 days', '-3 days +3 hours');
+        $this->catalog()->cloneApprovals($seed, 2_050, 'pending', '-2 days');
+
+        $data = $this->widget($company, $admin)->data;
+
+        self::assertSame(2_101, $this->at($data, 'decided'));
+        self::assertSame(2_100, $this->at($data, 'refused'));
+        self::assertSame(100, $this->at($data, 'refusal_rate'));
+        self::assertSame(3 * 3600, $this->at($data, 'median_seconds'));
+        self::assertSame(2_050, $this->at($data, 'pending', 'count'));
+        self::assertSame(2_050 * 10_000, $this->at($data, 'pending', 'amounts', 'EUR'));
+        self::assertSame(4_151, $this->at($data, 'buyers', 0, 'approvals'));
     }
 
     public function testNothingOfAnotherCompanyAppears(): void

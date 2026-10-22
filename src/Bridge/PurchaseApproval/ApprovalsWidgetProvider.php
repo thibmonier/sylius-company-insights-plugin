@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Bridge\PurchaseApproval;
 
-use Doctrine\DBAL\Types\Types;
 use Psr\Clock\ClockInterface;
-use Sylius\Component\Customer\Model\CustomerInterface;
 use Symfony\Component\Routing\Exception\ExceptionInterface as RoutingException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
@@ -15,27 +13,24 @@ use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidget;
 use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidgetProviderInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Widget\WidgetContext;
-use Tmonier\SyliusPurchaseApprovalPlugin\Entity\OrderApprovalInterface;
-use Tmonier\SyliusPurchaseApprovalPlugin\Repository\OrderApprovalRepositoryInterface;
 use Tmonier\SyliusPurchaseApprovalPlugin\Security\ApprovalPermissions;
 
 /**
- * How the approvals go, from the public repository of tmonier/sylius-purchase-approval-plugin: the orders
- * waiting (oldest first), the median time to decide, the share of refusals, and the buyers whose orders
- * are most often submitted to approval (a sign that their limit may be too low). The plugin offers no
- * aggregate for the last three: they are computed here from the approvals of the period (the 2 000 latest
- * at most). The amounts are those of the requests, tax included, as the approvers see them.
+ * How the approvals go, from the table of tmonier/sylius-purchase-approval-plugin: the orders waiting
+ * (oldest first), the median time to decide, the share of refusals, and the buyers whose orders are most
+ * often submitted to approval (a sign that their limit may be too low). The plugin offers no aggregate for
+ * these: they are SQL aggregates ({@see DbalApprovalStatistics}), with no limit, for the company of the
+ * signed-in member only. The amounts are tax exclusive like the rest of the dashboard, and the period is
+ * the one of the checkout of the order, like the orders counted in the indicators.
  */
 final readonly class ApprovalsWidgetProvider implements InsightsWidgetProviderInterface
 {
     public const TEMPLATE = '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/widget/approvals.html.twig';
 
-    private const MAX_APPROVALS = 2000;
-
     private const LISTED = 5;
 
     public function __construct(
-        private OrderApprovalRepositoryInterface $approvals,
+        private DbalApprovalStatistics $statistics,
         private SubmittedOrderCounts $orderCounts,
         private ClockInterface $clock,
         private UrlGeneratorInterface $urlGenerator,
@@ -62,84 +57,48 @@ final readonly class ApprovalsWidgetProvider implements InsightsWidgetProviderIn
     public function provide(WidgetContext $context): InsightsWidget
     {
         $company = $context->company;
+        $companyId = $company->getId() ?? 0;
         $period = $context->periods->current;
-        $inPeriod = $this->inPeriod($company, $period);
-        $decided = array_values(array_filter($inPeriod, static fn (OrderApprovalInterface $approval): bool => $approval->getDecidedAt() instanceof \DateTimeImmutable && in_array($approval->getState(), [OrderApprovalInterface::STATE_APPROVED, OrderApprovalInterface::STATE_REJECTED], true)));
-        $refused = count(array_filter($decided, static fn (OrderApprovalInterface $approval): bool => OrderApprovalInterface::STATE_REJECTED === $approval->getState()));
+        ['decided' => $decided, 'refused' => $refused] = $this->statistics->decisions($companyId, $period);
 
         return new InsightsWidget($this->code(), $this->title(), self::TEMPLATE, [
-            'pending' => $this->pending($company),
-            'decided' => count($decided),
+            'pending' => $this->pending($companyId),
+            'decided' => $decided,
             'refused' => $refused,
-            'refusal_rate' => ApprovalMetrics::percent($refused, count($decided)),
-            'median_seconds' => ApprovalMetrics::median(array_map(static fn (OrderApprovalInterface $approval): int => ($approval->getDecidedAt()?->getTimestamp() ?? 0) - $approval->getCreatedAt()->getTimestamp(), $decided)),
-            'buyers' => $this->frequentBuyers($company, $period, $inPeriod),
+            'refusal_rate' => ApprovalMetrics::percent($refused, $decided),
+            'median_seconds' => $this->statistics->medianSecondsToDecide($companyId, $period, $decided),
+            'buyers' => $this->frequentBuyers($companyId, $period),
             'url' => $this->url($company, $context->localeCode),
         ]);
     }
 
-    /** @return list<OrderApprovalInterface> */
-    private function inPeriod(CompanyInterface $company, Period $period): array
-    {
-        $query = $this->approvals->createListQueryBuilderByCompany($company, false);
-        $alias = $query->getRootAliases()[0];
-        $query
-            ->andWhere(sprintf('%1$s.createdAt >= :insights_from AND %1$s.createdAt < :insights_to', $alias))
-            ->setParameter('insights_from', $period->from, Types::DATETIME_IMMUTABLE)
-            ->setParameter('insights_to', $period->to, Types::DATETIME_IMMUTABLE)
-            ->setMaxResults(self::MAX_APPROVALS)
-        ;
-
-        return $this->onlyApprovals($query->getQuery()->getResult());
-    }
-
     /** @return array{count: int, amounts: array<string, int>, items: list<array{number: string, buyer: string, amount: int, currency: string, days: int}>, oldest_days: ?int} */
-    private function pending(CompanyInterface $company): array
+    private function pending(int $companyId): array
     {
-        $waiting = $this->onlyApprovals($this->approvals->createListQueryBuilderByCompany($company, true)->setMaxResults(self::MAX_APPROVALS)->getQuery()->getResult());
-        usort($waiting, static fn (OrderApprovalInterface $a, OrderApprovalInterface $b): int => [$a->getCreatedAt(), $a->getId()] <=> [$b->getCreatedAt(), $b->getId()]);
+        $totals = $this->statistics->pendingTotals($companyId);
+        $items = array_map(fn (array $item): array => [
+            'number' => $item['number'],
+            'buyer' => $item['buyer'],
+            'amount' => $item['amount'],
+            'currency' => $item['currency'],
+            'days' => $this->daysSince($item['createdAt']),
+        ], $totals['count'] > 0 ? $this->statistics->oldestPending($companyId, self::LISTED) : []);
 
-        $amounts = [];
-        foreach ($waiting as $approval) {
-            $currency = (string) $approval->getCurrencyCode();
-            $amounts[$currency] = ($amounts[$currency] ?? 0) + $approval->getTotal();
-        }
-        ksort($amounts);
-        $items = array_map(fn (OrderApprovalInterface $approval): array => [
-            'number' => (string) $approval->getOrder()?->getNumber(),
-            'buyer' => $this->name($approval->getOrder()?->getCustomer()),
-            'amount' => $approval->getTotal(),
-            'currency' => (string) $approval->getCurrencyCode(),
-            'days' => $this->daysSince($approval->getCreatedAt()),
-        ], array_slice($waiting, 0, self::LISTED));
-
-        return ['count' => count($waiting), 'amounts' => $amounts, 'items' => $items, 'oldest_days' => $items[0]['days'] ?? null];
+        return ['count' => $totals['count'], 'amounts' => $totals['amounts'], 'items' => $items, 'oldest_days' => $items[0]['days'] ?? null];
     }
 
-    /**
-     * @param list<OrderApprovalInterface> $approvals
-     *
-     * @return list<array{name: string, approvals: int, orders: int, rate: int}>
-     */
-    private function frequentBuyers(CompanyInterface $company, Period $period, array $approvals): array
+    /** @return list<array{name: string, approvals: int, orders: int, rate: int}> */
+    private function frequentBuyers(int $companyId, Period $period): array
     {
-        $perBuyer = [];
-        foreach ($approvals as $approval) {
-            $customer = $approval->getOrder()?->getCustomer();
-            if (!$customer instanceof CustomerInterface || !is_int($customer->getId())) {
-                continue;
-            }
-            $perBuyer[$customer->getId()] ??= ['name' => $this->name($customer), 'approvals' => 0];
-            ++$perBuyer[$customer->getId()]['approvals'];
-        }
+        $perBuyer = $this->statistics->approvalsPerBuyer($companyId, $period);
         if ([] === $perBuyer) {
             return [];
         }
 
-        $orders = $this->orderCounts->perCustomer($company->getId() ?? 0, $period);
+        $orders = $this->orderCounts->perCustomer($companyId, $period);
         $rows = [];
-        foreach ($perBuyer as $customerId => $buyer) {
-            $submitted = max($buyer['approvals'], $orders[$customerId] ?? 0);
+        foreach ($perBuyer as $buyer) {
+            $submitted = max($buyer['approvals'], $orders[$buyer['customerId']] ?? 0);
             $rows[] = ['name' => $buyer['name'], 'approvals' => $buyer['approvals'], 'orders' => $submitted, 'rate' => ApprovalMetrics::percent($buyer['approvals'], $submitted) ?? 0];
         }
         usort($rows, static fn (array $a, array $b): int => [$b['rate'], $b['approvals'], $a['name']] <=> [$a['rate'], $a['approvals'], $b['name']]);
@@ -164,18 +123,5 @@ final readonly class ApprovalsWidgetProvider implements InsightsWidgetProviderIn
         } catch (RoutingException) {
             return null;
         }
-    }
-
-    private function name(?CustomerInterface $customer): string
-    {
-        return $customer instanceof \Sylius\Component\Core\Model\CustomerInterface ? trim(($customer->getFirstName() ?? '') . ' ' . ($customer->getLastName() ?? '')) : '';
-    }
-
-    /**
-     * @return list<OrderApprovalInterface>
-     */
-    private function onlyApprovals(mixed $result): array
-    {
-        return is_array($result) ? array_values(array_filter($result, static fn (mixed $row): bool => $row instanceof OrderApprovalInterface)) : [];
     }
 }
