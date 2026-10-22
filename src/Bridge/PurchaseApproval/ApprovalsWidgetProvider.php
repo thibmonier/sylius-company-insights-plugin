@@ -74,7 +74,7 @@ final readonly class ApprovalsWidgetProvider implements InsightsWidgetProviderIn
             'refusal_rate' => ApprovalMetrics::percent($refused, count($decided)),
             'median_seconds' => ApprovalMetrics::median(array_map(static fn (OrderApprovalInterface $approval): int => ($approval->getDecidedAt()?->getTimestamp() ?? 0) - $approval->getCreatedAt()->getTimestamp(), $decided)),
             'buyers' => $this->frequentBuyers($company, $period, $inPeriod),
-            'url' => $this->url($company),
+            'url' => $this->url($company, $context->localeCode),
         ]);
     }
 
@@ -153,14 +153,14 @@ final readonly class ApprovalsWidgetProvider implements InsightsWidgetProviderIn
     }
 
     /** The list of approvals, when purchase approval lets this member open it (by default its approvers only). */
-    private function url(CompanyInterface $company): ?string
+    private function url(CompanyInterface $company, string $localeCode): ?string
     {
         if (!$this->authorizationChecker->isGranted(ApprovalPermissions::APPROVAL_LIST, $company)) {
             return null;
         }
 
         try {
-            return $this->urlGenerator->generate('tmonier_purchase_approval_shop_approvals');
+            return $this->urlGenerator->generate('tmonier_purchase_approval_shop_approvals', ['_locale' => $localeCode]);
         } catch (RoutingException) {
             return null;
         }

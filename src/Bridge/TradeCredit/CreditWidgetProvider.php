@@ -70,14 +70,15 @@ final readonly class CreditWidgetProvider implements InsightsWidgetProviderInter
             'oldest_overdue_days' => [] === $overdue ? null : max(array_map(fn (StatementItem $item): int => max(0, AgeingBuckets::daysPastDue($item->dueDate, $this->clock->now())), $overdue)),
             'next_due' => [] === $upcoming ? null : ['date' => $upcoming[0]->dueDate, 'amount' => $upcoming[0]->amount, 'count' => count(array_filter($upcoming, static fn (StatementItem $item): bool => $item->dueDate == $upcoming[0]->dueDate))],
             'on_hold' => $statement->account->isCreditHold(),
-            'url' => $this->url(),
+            'url' => $this->url($context->localeCode),
         ]);
     }
 
-    private function url(): ?string
+    /** The locale is given: the shop routes live under `/{_locale}` and the request may not carry it (nor any request at all). */
+    private function url(string $localeCode): ?string
     {
         try {
-            return $this->urlGenerator->generate('tmonier_trade_credit_shop_statement');
+            return $this->urlGenerator->generate('tmonier_trade_credit_shop_statement', ['_locale' => $localeCode]);
         } catch (RoutingException) {
             return null;
         }
