@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-22
+
+### Fixed
+- Keyboard accessibility of the scrollable tables (rankings, breakdown, monthly table, approvals widget): each `table-responsive` wrapper is now a focusable region (`tabindex="0"`, `role="region"`, `aria-label` = caption of the table, one shared template), as axe-core requires (`scrollable-region-focusable`) at 375 px.
+- Filter form: the row of buttons wraps and the button label can wrap, so that "Appliquer" no longer overflows by 31 px in French at 1366 px.
+
+### Changed
+- README screenshots (English and French): breakdown, Approvals and Credit widgets, export button.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added

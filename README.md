@@ -109,6 +109,12 @@ Demo data of [sylius-b2b-demo](https://github.com/thibmonier/sylius-b2b-demo), s
 
 ![Top categories: donut with fill patterns and its equivalent table](docs/images/categories.en.jpg)
 
+![Purchases per delivery site and per analytical axis, with the share of the spend](docs/images/breakdown.en.jpg)
+
+![Approvals and Credit widgets of the dashboard](docs/images/widgets.en.jpg)
+
+![The CSV export button of the selection](docs/images/export.en.jpg)
+
 ## Installation
 
 ```bash

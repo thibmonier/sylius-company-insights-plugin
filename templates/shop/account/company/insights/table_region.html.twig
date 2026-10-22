@@ -1,0 +1,8 @@
+{#
+ # Scrollable table (Bootstrap .table-responsive): a keyboard user must be able to focus the region to
+ # scroll it, so it is a labelled region in the tab order. Embed it with `label` (the caption of the
+ # table) and fill the `table` block.
+ #}
+<div class="table-responsive{{ extra_class|default ? ' ' ~ extra_class }}" tabindex="0" role="region" aria-label="{{ label }}" {{ sylius_test_html_attribute('tmonier-insights-table-region') }}>
+    {% block table %}{% endblock %}
+</div>

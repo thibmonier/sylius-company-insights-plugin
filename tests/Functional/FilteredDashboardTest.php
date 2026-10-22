@@ -35,6 +35,31 @@ final class FilteredDashboardTest extends WebTestCase
         self::assertStringContainsString('25 %', $rows->eq(1)->text());
     }
 
+    public function testEveryScrollableTableIsAFocusableLabelledRegionAndTheFiltersCanWrap(): void
+    {
+        [$isabelle, $company] = $this->administrator();
+        $this->catalog()->addressBookEntry($company, 'Atelier de Lyon', '12 rue des Ateliers', 'Lyon');
+        $locale = $this->catalog()->localeCode();
+        $gloves = $this->catalog()->product('EPI-1', [$locale => 'Gloves'], $this->catalog()->taxon('EPI', 'Protective equipment'));
+        $order = $this->catalog()->orderOfLines($isabelle, [[$gloves, 1, 10_000]], '-10 days');
+        $this->catalog()->deliverTo($order, '12 rue des Ateliers', 'Lyon');
+
+        $crawler = $this->open($isabelle);
+
+        $regions = $crawler->filter('.table-responsive');
+        self::assertGreaterThanOrEqual(4, $regions->count());
+        foreach ($regions as $node) {
+            $region = new Crawler($node);
+            self::assertSame('0', $region->attr('tabindex'));
+            self::assertSame('region', $region->attr('role'));
+            $label = trim((string) $region->attr('aria-label'));
+            self::assertNotSame('', $label);
+            self::assertSame($label, trim($region->filter('table > caption')->text()));
+        }
+        self::assertStringContainsString('flex-wrap', (string) $crawler->filter('[data-test-tmonier-insights-filter-apply]')->ancestors()->first()->attr('class'));
+        self::assertStringContainsString('text-wrap', (string) $crawler->filter('[data-test-tmonier-insights-filter-apply]')->attr('class'));
+    }
+
     public function testWithoutAxisOfTheApplicationOnlyTheSiteBlockIsShown(): void
     {
         [$isabelle] = $this->administrator();
