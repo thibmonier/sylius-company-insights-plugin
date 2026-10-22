@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-10-22
 
 ### Added
 - Filters of the whole dashboard (indicators, chart, rankings, breakdown) and of the export: a member of the company (`?member=`), a delivery site of its address book (`?site=`) and a custom period of two dates (`?from=&to=`, compared with the period of the same duration just before). The member and the site are checked against the company of the signed-in member; any other value is ignored.
