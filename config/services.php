@@ -23,6 +23,7 @@ use Tmonier\SyliusCompanyInsightsPlugin\Ranking\DbalCategoryRanking;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\DbalProductRanking;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingsProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Security\InsightsVoter;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidgetRegistry;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\DbalPurchaseStatistics;
 
@@ -128,6 +129,14 @@ return static function (ContainerConfigurator $container): void {
         ])
     ;
 
+    $services->set('tmonier_company_insights.widget_registry', InsightsWidgetRegistry::class)
+        ->args([
+            tagged_iterator('tmonier_company_insights.widget_provider'),
+            service('security.authorization_checker'),
+            service('logger'),
+        ])
+    ;
+
     $services->set('tmonier_company_insights.dashboard_provider', DashboardProvider::class)
         ->args([
             service('tmonier_company_insights.period_resolver'),
@@ -155,6 +164,7 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_company_insights.filter.choices'),
             service('tmonier_company_insights.breakdown_provider'),
             service('tmonier_company_insights.export.csv_exporter'),
+            service('tmonier_company_insights.widget_registry'),
         ])
         ->call('setContainer', [service(\Psr\Container\ContainerInterface::class)])
         ->tag('controller.service_arguments')

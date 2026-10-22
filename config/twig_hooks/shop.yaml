@@ -24,6 +24,9 @@ sylius_twig_hooks:
             section:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/dashboard.html.twig'
                 priority: -10
+            widgets:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/widgets.html.twig'
+                priority: -15
             monthly:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/monthly.html.twig'
                 priority: -20

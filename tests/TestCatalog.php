@@ -28,6 +28,7 @@ use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyAddressInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Factory\CompanyMemberFactoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 /**
@@ -238,14 +239,55 @@ final class TestCatalog
         return $variant;
     }
 
-    public function pendingApproval(OrderInterface $order, string $state = 'pending'): void
+    public function pendingApproval(OrderInterface $order, string $state = 'pending', string $createdAt = 'now', ?string $decidedAt = null): void
     {
         $this->connection()->insert('tmonier_purchase_approval_order_approval', [
             'order_id' => $order->getId(),
             'company_id' => $this->connection()->fetchOne('SELECT company_id FROM tmonier_company_order WHERE order_id = ?', [$order->getId()]) ?: null,
             'state' => $state,
-            'total' => $order->getTotal(),
+            'total' => (int) $this->connection()->fetchOne('SELECT total FROM sylius_order WHERE id = ?', [$order->getId()]),
             'currency_code' => $order->getCurrencyCode(),
+            'created_at' => (new \DateTimeImmutable($createdAt))->format('Y-m-d H:i:s'),
+            'decided_at' => null === $decidedAt ? null : (new \DateTimeImmutable($decidedAt))->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * The credit line of the company (the account of the trade credit plugin is owned by the company), written
+     * directly: the plugin offers no setter for the amount in use.
+     */
+    public function tradeCreditAccount(CompanyInterface $company, int $limit, int $committed, string $currency = 'EUR', bool $hold = false): int
+    {
+        $this->connection()->insert('tmonier_trade_credit_account', [
+            ...$this->explicitId('tmonier_trade_credit_account'),
+            'owner_type' => 'company',
+            'owner_identifier' => (string) $company->getId(),
+            'currency_code' => $currency,
+            'credit_limit' => $limit,
+            'committed_amount' => $committed,
+            'allow_exceed' => 0,
+            'credit_hold' => $hold ? 1 : 0,
+            'block_when_overdue' => 0,
+            'enabled' => 1,
+            'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ]);
+
+        return (int) $this->connection()->fetchOne('SELECT id FROM tmonier_trade_credit_account WHERE owner_type = ? AND owner_identifier = ?', ['company', (string) $company->getId()]);
+    }
+
+    /** An invoice on account still to be paid by the company, due on the given date. */
+    public function openInvoice(int $accountId, OrderInterface $order, int $amount, string $dueDate): void
+    {
+        $this->connection()->insert('tmonier_trade_credit_order_terms', [
+            'id' => Uuid::v7()->toRfc4122(),
+            'order_id' => $order->getId(),
+            'account_id' => $accountId,
+            'amount' => $amount,
+            'currency_code' => $order->getCurrencyCode(),
+            'net_days' => 30,
+            'end_of_month_mode' => 'none',
+            'due_date' => (new \DateTimeImmutable($dueDate))->format('Y-m-d'),
+            'state' => 'reserved',
             'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ]);
     }

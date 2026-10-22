@@ -1,0 +1,104 @@
+{# Widget "Approvals". Context: widget, data, locale. Amounts are those of the requests, tax included. #}
+{% set pending = data.pending %}
+<p>{{ 'tmonier_company_insights.widget.approvals.description'|trans }}</p>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-6">
+        <h4 class="h6">{{ 'tmonier_company_insights.widget.approvals.pending'|trans }}</h4>
+        {% if pending.count == 0 %}
+            <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-approvals-pending-none') }}>{{ 'tmonier_company_insights.ui.no_pending'|trans }}</p>
+        {% else %}
+            <p class="mb-1">
+                <span class="display-6" {{ sylius_test_html_attribute('tmonier-insights-approvals-pending-count') }}>{{ pending.count|format_number }}</span>
+                {{ 'tmonier_company_insights.ui.pending_orders'|trans({'%count%': pending.count}) }}
+            </p>
+            <ul class="mb-1">
+                {% for currency, amount in pending.amounts %}
+                    <li {{ sylius_test_html_attribute('tmonier-insights-approvals-pending-amount', currency) }}>{{ amount|sylius_format_money(currency, locale) }}</li>
+                {% endfor %}
+            </ul>
+            <p class="mb-2" {{ sylius_test_html_attribute('tmonier-insights-approvals-oldest') }}>{{ 'tmonier_company_insights.widget.approvals.oldest'|trans({'%days%': pending.oldest_days}) }}</p>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" {{ sylius_test_html_attribute('tmonier-insights-approvals-pending-table') }}>
+                    <caption class="caption-top">{{ 'tmonier_company_insights.widget.approvals.pending_caption'|trans }}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'tmonier_company_insights.export.column.number'|trans }}</th>
+                            <th scope="col">{{ 'tmonier_company_insights.export.column.buyer'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.widget.approvals.amount'|trans }}</th>
+                            <th scope="col" class="text-end">{{ 'tmonier_company_insights.widget.approvals.waiting'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pending.items %}
+                            <tr {{ sylius_test_html_attribute('tmonier-insights-approvals-pending-row') }}>
+                                <th scope="row">{{ item.number }}</th>
+                                <td>{{ item.buyer }}</td>
+                                <td class="text-end">{{ item.amount|sylius_format_money(item.currency, locale) }}</td>
+                                <td class="text-end">{{ 'tmonier_company_insights.widget.approvals.days'|trans({'%count%': item.days}) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-md-6">
+        <h4 class="h6">{{ 'tmonier_company_insights.widget.approvals.decisions'|trans }}</h4>
+        <dl class="mb-0">
+            <dt>{{ 'tmonier_company_insights.widget.approvals.median'|trans }}</dt>
+            <dd {{ sylius_test_html_attribute('tmonier-insights-approvals-median') }}>
+                {% if data.median_seconds is null %}
+                    {{ 'tmonier_company_insights.widget.approvals.none_decided'|trans }}
+                {% elseif data.median_seconds < 172800 %}
+                    {{ 'tmonier_company_insights.widget.approvals.hours'|trans({'%value%': (data.median_seconds / 3600)|round(1)|format_number}) }}
+                {% else %}
+                    {{ 'tmonier_company_insights.widget.approvals.days_value'|trans({'%value%': (data.median_seconds / 86400)|round(1)|format_number}) }}
+                {% endif %}
+            </dd>
+            <dt>{{ 'tmonier_company_insights.widget.approvals.refusal_rate'|trans }}</dt>
+            <dd {{ sylius_test_html_attribute('tmonier-insights-approvals-refusal') }}>
+                {% if data.refusal_rate is null %}
+                    {{ 'tmonier_company_insights.widget.approvals.none_decided'|trans }}
+                {% else %}
+                    {{ 'tmonier_company_insights.widget.approvals.refusal_value'|trans({'%rate%': data.refusal_rate, '%refused%': data.refused, '%decided%': data.decided}) }}
+                {% endif %}
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<h4 class="h6">{{ 'tmonier_company_insights.widget.approvals.buyers'|trans }}</h4>
+{% if data.buyers is empty %}
+    <p class="mb-2" {{ sylius_test_html_attribute('tmonier-insights-approvals-buyers-none') }}>{{ 'tmonier_company_insights.widget.approvals.buyers_none'|trans }}</p>
+{% else %}
+    <p>{{ 'tmonier_company_insights.widget.approvals.buyers_help'|trans }}</p>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" {{ sylius_test_html_attribute('tmonier-insights-approvals-buyers') }}>
+            <caption class="caption-top">{{ 'tmonier_company_insights.widget.approvals.buyers_caption'|trans }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'tmonier_company_insights.ranking.column.member'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.widget.approvals.submitted'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.orders'|trans }}</th>
+                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for buyer in data.buyers %}
+                    <tr {{ sylius_test_html_attribute('tmonier-insights-approvals-buyer') }}>
+                        <th scope="row">{{ buyer.name }}</th>
+                        <td class="text-end">{{ buyer.approvals|format_number }}</td>
+                        <td class="text-end">{{ buyer.orders|format_number }}</td>
+                        <td class="text-end">{{ buyer.rate }} %</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+{% if data.url %}
+    <a href="{{ data.url }}" {{ sylius_test_html_attribute('tmonier-insights-approvals-link') }}>{{ 'tmonier_company_insights.widget.approvals.link'|trans }}</a>
+{% endif %}

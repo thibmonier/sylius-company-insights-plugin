@@ -12,13 +12,17 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderDimensionProviderInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderReferenceProviderInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidgetProviderInterface;
 use Tmonier\SyliusPurchaseApprovalPlugin\Entity\OrderApprovalInterface;
+use Tmonier\SyliusTradeCreditPlugin\Statement\StatementBuilder;
 
 final class TmonierSyliusCompanyInsightsExtension extends Extension implements PrependExtensionInterface
 {
     use PrependDoctrineMigrationsTrait;
 
     private const PURCHASE_APPROVAL_PARAMETER = 'tmonier_company_insights.purchase_approval_bridge';
+
+    private const TRADE_CREDIT_PARAMETER = 'tmonier_company_insights.trade_credit_bridge';
 
     private const TIMEZONE_PARAMETER = 'tmonier_company_insights.timezone';
 
@@ -34,10 +38,16 @@ final class TmonierSyliusCompanyInsightsExtension extends Extension implements P
 
         $container->registerForAutoconfiguration(OrderDimensionProviderInterface::class)->addTag('tmonier_company_insights.order_dimension_provider');
         $container->registerForAutoconfiguration(OrderReferenceProviderInterface::class)->addTag('tmonier_company_insights.order_reference_provider');
+        $container->registerForAutoconfiguration(InsightsWidgetProviderInterface::class)->addTag('tmonier_company_insights.widget_provider');
 
         // Optional: orders held by tmonier/sylius-purchase-approval-plugin are reported apart.
         if (true === ($container->hasParameter(self::PURCHASE_APPROVAL_PARAMETER) ? $container->getParameter(self::PURCHASE_APPROVAL_PARAMETER) : false)) {
             $loader->load('services/purchase_approval.php');
+            $loader->load('services/purchase_approval_widget.php');
+        }
+
+        if (true === ($container->hasParameter(self::TRADE_CREDIT_PARAMETER) ? $container->getParameter(self::TRADE_CREDIT_PARAMETER) : false)) {
+            $loader->load('services/trade_credit.php');
         }
     }
 
@@ -47,6 +57,11 @@ final class TmonierSyliusCompanyInsightsExtension extends Extension implements P
         $container->setParameter(
             self::PURCHASE_APPROVAL_PARAMETER,
             $container->hasExtension('tmonier_sylius_purchase_approval') && interface_exists(OrderApprovalInterface::class),
+        );
+
+        $container->setParameter(
+            self::TRADE_CREDIT_PARAMETER,
+            $container->hasExtension('tmonier_sylius_trade_credit') && class_exists(StatementBuilder::class),
         );
 
         $this->prependDoctrineMigrations($container);

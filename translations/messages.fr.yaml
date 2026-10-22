@@ -108,6 +108,47 @@ tmonier_company_insights:
         sites:
             title: 'Achats par site de livraison'
             description: "Où les commandes sont livrées. Une adresse de livraison présente dans le carnet d'adresses de votre entreprise prend son libellé ; toute autre apparaît sous « Autres adresses ». Montants hors taxes."
+    widget:
+        unavailable: 'Données momentanément indisponibles.'
+        approvals:
+            title: 'Approbations'
+            description: "Comment se passe l'approbation des commandes dans votre entreprise sur la période affichée. Les montants des demandes sont TTC, comme les voient les approbateurs."
+            pending: "En attente maintenant"
+            pending_caption: "Commandes en attente d'approbation, la plus ancienne en tête"
+            oldest: "La plus ancienne attend depuis %days% jour(s)."
+            amount: 'Montant (TTC)'
+            waiting: 'Attente'
+            days: "{0} Aujourd'hui|{1} 1 jour|]1,Inf[ %count% jours"
+            decisions: 'Décisions de la période'
+            median: 'Délai médian de décision'
+            hours: '%value% h'
+            days_value: '%value% jours'
+            refusal_rate: 'Taux de refus'
+            refusal_value: '%rate% % (%refused% refus sur %decided% décisions)'
+            none_decided: 'Aucune décision sur cette période.'
+            buyers: "Acheteurs le plus souvent soumis à approbation"
+            buyers_help: "Un acheteur dont presque toutes les commandes exigent une approbation a peut-être un plafond d'achat trop bas."
+            buyers_caption: "Acheteurs ayant des commandes soumises à approbation sur la période"
+            buyers_none: "Aucune commande n'a été soumise à approbation sur cette période."
+            submitted: 'Soumises à approbation'
+            link: 'Voir les approbations'
+        credit:
+            title: 'Encours'
+            description: "La ligne de crédit de votre entreprise et ce qu'il reste à payer."
+            no_account: 'Pas de compte de paiement à terme'
+            no_limit: "Ce compte n'a pas de limite de crédit."
+            on_hold: 'La ligne de crédit est suspendue : les nouvelles commandes sur compte sont bloquées.'
+            usage: '%percent% % de la limite de crédit utilisée : %used% sur %limit%'
+            limit: 'Limite de crédit'
+            used: 'Encours utilisé'
+            available: 'Disponible'
+            overdue: 'Échu'
+            no_overdue: 'Rien en retard.'
+            overdue_value: '%amount% sur %count% facture(s) échue(s), la plus ancienne depuis %days% jour(s)'
+            next_due: 'Prochaine échéance'
+            no_next_due: 'Aucune échéance à venir.'
+            next_due_value: '%date% : %amount%'
+            link: 'Voir le relevé de compte'
     export:
         button: 'Exporter en CSV'
         help: 'Une ligne par ligne de commande, hors taxes, pour la période et les filtres ci-dessus. Fichier UTF-8 à séparateur point-virgule, lisible directement dans un tableur.'

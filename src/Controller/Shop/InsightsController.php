@@ -37,6 +37,8 @@ use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingKind;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingScope;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingsProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Security\InsightsPermissions;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidgetRegistry;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\WidgetContext;
 
 /**
  * "Purchasing dashboard" of the customer account (behind the Sylius `/account` access control) and
@@ -59,6 +61,7 @@ final class InsightsController extends AbstractController
         private readonly FilterChoicesInterface $filterChoices,
         private readonly BreakdownProvider $breakdownProvider,
         private readonly CsvExporter $csvExporter,
+        private readonly InsightsWidgetRegistry $widgetRegistry,
     ) {
     }
 
@@ -162,6 +165,7 @@ final class InsightsController extends AbstractController
             'selection' => $selection,
             'members' => $this->filterChoices->members($companyId),
             'sites' => $this->filterChoices->sites($companyId),
+            'widgets' => $this->widgetRegistry->widgets(new WidgetContext($company, $member, $selection->periods, $selection->filter, $request->getLocale())),
             'monthly' => $this->monthlyPurchasesProvider->provide($companyId, $currency, $selection->filter),
             'rankings' => $this->rankingsProvider->top($companyId, $dashboard->periods->current, $currencies, $request->getLocale(), $sort, $selection->filter),
             'breakdowns' => $this->breakdownProvider->forCurrencies(new RankingScope($companyId, $dashboard->periods->current, $currency, $request->getLocale(), $selection->filter), $currencies),

@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
+### Added
+- Filters of the whole dashboard (indicators, chart, rankings, breakdown) and of the export: a member of the company (`?member=`), a delivery site of its address book (`?site=`) and a custom period of two dates (`?from=&to=`, compared with the period of the same duration just before). The member and the site are checked against the company of the signed-in member; any other value is ignored.
+- Purchases per delivery site, with the label of the address book of the company ("Other addresses" for the rest), and purchases per analytical axis through the new extension point `OrderDimensionProviderInterface` (the plugin ships no axis; without one, no block).
+- CSV export of the selection (`/account/company/insights/export`, same permission and filters as the dashboard): one line per order line, UTF-8 with BOM, `;` separator, decimal comma, cells starting with `=`, `+`, `-`, `@` neutralised, 24 months and 50 000 lines at most (nothing is produced beyond), content-free log of each export. `OrderReferenceProviderInterface` fills the "PO reference" column.
+- Dashboard widgets: `InsightsWidgetProviderInterface` and the widget registry (permission per widget, a failing widget becomes "Data temporarily unavailable" and is logged without personal data). Two bridges detected when the companion is installed, with no new required dependency: **Approvals** (`tmonier/sylius-purchase-approval-plugin`: orders waiting with their age, median time to decide, refusal rate, buyers most often submitted to approval) and **Credit** (`tmonier/sylius-trade-credit-plugin`: limit, used, available, overdue, next due date, usage gauge).
+- English and French labels for all of the above.
+
+### Changed
+- CI and `composer.json`: `tmonier/sylius-trade-credit-plugin` joins the dev dependencies (tests of the Credit widget); `suggest` lists both companions.
+
 ## [0.1.1] - 2026-10-22
 
 ### Fixed

@@ -1,0 +1,20 @@
+{#
+ # The blocks supplied by other plugins (InsightsWidgetProviderInterface): approvals, credit... A widget whose
+ # figures could not be computed says so in a few words, the others stay.
+ #}
+{% set context = hookable_metadata.context %}
+{% set locale = app.request.locale %}
+
+{% for widget in context.widgets %}
+    {% set heading = 'insights-widget-' ~ widget.code %}
+    <section aria-labelledby="{{ heading }}" class="card mt-4" {{ sylius_test_html_attribute('tmonier-insights-widget', widget.code) }}>
+        <div class="card-body">
+            <h3 class="h5" id="{{ heading }}">{{ widget.title|trans }}</h3>
+            {% if widget.unavailable %}
+                <p class="mb-0" role="status" {{ sylius_test_html_attribute('tmonier-insights-widget-unavailable') }}>{{ 'tmonier_company_insights.widget.unavailable'|trans }}</p>
+            {% else %}
+                {% include widget.template with { widget: widget, data: widget.data, locale: locale } only %}
+            {% endif %}
+        </div>
+    </section>
+{% endfor %}

@@ -51,6 +51,12 @@ final readonly class CountedOrderSql
         return 'i.total - (' . self::TAX_OF_LINE . ')';
     }
 
+    /** Every order of the company that went through the checkout, whatever happened to it since; the period is up to the caller. */
+    public function submitted(): string
+    {
+        return "co.company_id = :company AND o.checkout_state = 'completed'";
+    }
+
     /** Completed, not cancelled and not waiting for approval; the period is up to the caller. */
     public function counted(): string
     {

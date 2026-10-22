@@ -37,10 +37,12 @@
         "symfony/runtime": "^6.4 || ^7.4 || ^8.0",
         "symfony/web-profiler-bundle": "^6.4 || ^7.4 || ^8.0",
         "symfony/webpack-encore-bundle": "^2.2",
-        "tmonier/sylius-purchase-approval-plugin": "^1.1"
+        "tmonier/sylius-purchase-approval-plugin": "^1.1",
+        "tmonier/sylius-trade-credit-plugin": "^1.1"
     },
     "suggest": {
-        "tmonier/sylius-purchase-approval-plugin": "Orders waiting for approval are shown apart and are not counted in the spend"
+        "tmonier/sylius-purchase-approval-plugin": "Orders waiting for approval are shown apart and are not counted in the spend, and the \"Approvals\" widget shows how the approvals go",
+        "tmonier/sylius-trade-credit-plugin": "The \"Credit\" widget shows the credit limit, the amount used and the overdue invoices of the company"
     },
     "config": {
         "sort-packages": true,
@@ -54,7 +56,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.1-dev"
+            "dev-main": "0.2-dev"
         },
         "symfony": {
             "require": "^7.4"

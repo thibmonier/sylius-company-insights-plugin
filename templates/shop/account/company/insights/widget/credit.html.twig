@@ -1,0 +1,51 @@
+{# Widget "Credit". Context: widget, data, locale. #}
+{% if not data.account %}
+    <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-credit-none') }}>{{ 'tmonier_company_insights.widget.credit.no_account'|trans }}</p>
+{% else %}
+    {% set currency = data.currency %}
+    <p>{{ 'tmonier_company_insights.widget.credit.description'|trans }}</p>
+
+    {% if data.on_hold %}
+        <p class="alert alert-warning" role="status" {{ sylius_test_html_attribute('tmonier-insights-credit-hold') }}>{{ 'tmonier_company_insights.widget.credit.on_hold'|trans }}</p>
+    {% endif %}
+
+    <div class="mb-3" {{ sylius_test_html_attribute('tmonier-insights-credit-gauge') }}>
+        {% if data.used_percent is null %}
+            <p class="mb-0">{{ 'tmonier_company_insights.widget.credit.no_limit'|trans }}</p>
+        {% else %}
+            <label for="insights-credit-usage" class="d-block mb-1">
+                <span {{ sylius_test_html_attribute('tmonier-insights-credit-usage') }}>{{ 'tmonier_company_insights.widget.credit.usage'|trans({'%percent%': data.used_percent, '%used%': data.used|sylius_format_money(currency, locale), '%limit%': data.limit|sylius_format_money(currency, locale)}) }}</span>
+            </label>
+            <progress id="insights-credit-usage" class="w-100" value="{{ data.used_percent }}" max="100">{{ data.used_percent }} %</progress>
+        {% endif %}
+    </div>
+
+    <dl class="row mb-3">
+        <dt class="col-sm-6">{{ 'tmonier_company_insights.widget.credit.limit'|trans }}</dt>
+        <dd class="col-sm-6" {{ sylius_test_html_attribute('tmonier-insights-credit-limit') }}>{{ data.limit|sylius_format_money(currency, locale) }}</dd>
+        <dt class="col-sm-6">{{ 'tmonier_company_insights.widget.credit.used'|trans }}</dt>
+        <dd class="col-sm-6" {{ sylius_test_html_attribute('tmonier-insights-credit-used') }}>{{ data.used|sylius_format_money(currency, locale) }}</dd>
+        <dt class="col-sm-6">{{ 'tmonier_company_insights.widget.credit.available'|trans }}</dt>
+        <dd class="col-sm-6" {{ sylius_test_html_attribute('tmonier-insights-credit-available') }}>{{ data.available|sylius_format_money(currency, locale) }}</dd>
+        <dt class="col-sm-6">{{ 'tmonier_company_insights.widget.credit.overdue'|trans }}</dt>
+        <dd class="col-sm-6" {{ sylius_test_html_attribute('tmonier-insights-credit-overdue') }}>
+            {% if data.overdue_count == 0 %}
+                {{ 'tmonier_company_insights.widget.credit.no_overdue'|trans }}
+            {% else %}
+                {{ 'tmonier_company_insights.widget.credit.overdue_value'|trans({'%amount%': data.overdue_amount|sylius_format_money(currency, locale), '%count%': data.overdue_count, '%days%': data.oldest_overdue_days}) }}
+            {% endif %}
+        </dd>
+        <dt class="col-sm-6">{{ 'tmonier_company_insights.widget.credit.next_due'|trans }}</dt>
+        <dd class="col-sm-6" {{ sylius_test_html_attribute('tmonier-insights-credit-next-due') }}>
+            {% if data.next_due is null %}
+                {{ 'tmonier_company_insights.widget.credit.no_next_due'|trans }}
+            {% else %}
+                {{ 'tmonier_company_insights.widget.credit.next_due_value'|trans({'%date%': data.next_due.date|format_date('medium'), '%amount%': data.next_due.amount|sylius_format_money(currency, locale)}) }}
+            {% endif %}
+        </dd>
+    </dl>
+
+    {% if data.url %}
+        <a href="{{ data.url }}" {{ sylius_test_html_attribute('tmonier-insights-credit-link') }}>{{ 'tmonier_company_insights.widget.credit.link'|trans }}</a>
+    {% endif %}
+{% endif %}
