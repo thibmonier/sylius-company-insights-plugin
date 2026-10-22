@@ -4,7 +4,6 @@
  #}
 {% set context = hookable_metadata.context %}
 {% set locale = app.request.locale %}
-{% set period_key = context.dashboard.periods.key.value %}
 {% set several = context.rankings|length > 1 %}
 {% set metric_parameters = context.metric.value != 'amount' ? {metric: context.metric.value} : {} %}
 
@@ -12,14 +11,14 @@
     {% set suffix = several ? ' (' ~ set.currencyCode ~ ')' : '' %}
     {% for kind in ['buyers', 'products', 'categories'] %}
         {% set ranking = attribute(set, kind) %}
-        {% set see_all = path('tmonier_company_insights_shop_ranking', {ranking: kind, period: period_key, currency: set.currencyCode}|merge(kind == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {})) %}
+        {% set see_all = path('tmonier_company_insights_shop_ranking', context.selection.query|merge({ranking: kind, currency: set.currencyCode})|merge(kind == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {})) %}
         <section aria-labelledby="insights-ranking-{{ kind }}-{{ set.currencyCode }}" class="card mt-4" {{ sylius_test_html_attribute('tmonier-insights-ranking', kind ~ '-' ~ set.currencyCode) }}>
             <div class="card-body">
                 <h3 class="h5" id="insights-ranking-{{ kind }}-{{ set.currencyCode }}">{{ ('tmonier_company_insights.ranking.' ~ kind ~ '.title')|trans }}{{ suffix }}</h3>
                 <p>{{ ('tmonier_company_insights.ranking.' ~ kind ~ '.description')|trans }}</p>
 
                 {% if kind == 'products' %}
-                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/sorts.html.twig' with { sorts: context.sorts, sort: context.sort, route: 'tmonier_company_insights_shop_insights', parameters: {period: period_key}|merge(metric_parameters) } only %}
+                    {% include '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/sorts.html.twig' with { sorts: context.sorts, sort: context.sort, route: 'tmonier_company_insights_shop_insights', parameters: context.selection.query|merge(metric_parameters) } only %}
                 {% endif %}
 
                 {% if ranking.rows is empty %}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Indicators;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
+use Tmonier\SyliusCompanyInsightsPlugin\Period\PeriodComparison;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\PeriodKey;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\PeriodResolver;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CurrencyTotals;
@@ -21,16 +23,20 @@ final readonly class DashboardProvider
     /** @param string $fallbackCurrency Currency of the zero amounts of a company without order */
     public function provide(int $companyId, PeriodKey $key, string $fallbackCurrency): Dashboard
     {
-        $periods = $this->periodResolver->resolve($key);
-        $current = $this->statistics->counted($companyId, $periods->current);
-        $previous = $this->statistics->counted($companyId, $periods->previous);
+        return $this->provideFor($companyId, $this->periodResolver->resolve($key), $fallbackCurrency);
+    }
+
+    public function provideFor(int $companyId, PeriodComparison $periods, string $fallbackCurrency, PurchaseFilter $filter = new PurchaseFilter()): Dashboard
+    {
+        $current = $this->statistics->counted($companyId, $periods->current, $filter);
+        $previous = $this->statistics->counted($companyId, $periods->previous, $filter);
 
         return new Dashboard(
             $periods,
             Indicator::compare($current->ordersCount(), $previous->ordersCount()),
             Indicator::compare($current->activeBuyers, $previous->activeBuyers),
             $this->currencies($current, $previous, $fallbackCurrency),
-            $this->statistics->pending($companyId, $periods->current),
+            $this->statistics->pending($companyId, $periods->current, $filter),
         );
     }
 

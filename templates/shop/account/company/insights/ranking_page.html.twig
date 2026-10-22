@@ -6,7 +6,7 @@
 {% set kind = context.kind %}
 {% set periods = context.dashboard.periods %}
 {% set locale = app.request.locale %}
-{% set base = {ranking: kind.value, period: periods.key.value, currency: ranking.currencyCode}|merge(kind.value == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {}) %}
+{% set base = context.selection.query|merge({ranking: kind.value, currency: ranking.currencyCode})|merge(kind.value == 'products' and context.sort.value != 'spend' ? {sort: context.sort.value} : {}) %}
 {% set current = ranking.page.page %}
 
 <h2 class="h4" {{ sylius_test_html_attribute('tmonier-insights-ranking-title') }}>{{ kind.title|trans }}{% if context.currencies|length > 1 %} ({{ ranking.currencyCode }}){% endif %}</h2>
@@ -60,5 +60,5 @@
 </section>
 
 <p class="mt-3">
-    <a href="{{ path('tmonier_company_insights_shop_insights', {period: periods.key.value}) }}" {{ sylius_test_html_attribute('tmonier-insights-back') }}>{{ 'tmonier_company_insights.ranking.back'|trans }}</a>
+    <a href="{{ path('tmonier_company_insights_shop_insights', context.selection.query) }}" {{ sylius_test_html_attribute('tmonier-insights-back') }}>{{ 'tmonier_company_insights.ranking.back'|trans }}</a>
 </p>

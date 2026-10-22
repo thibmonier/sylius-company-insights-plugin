@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Container\ContainerInterface;
+use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ChannelPricingInterface;
@@ -23,9 +24,11 @@ use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
 use Sylius\Component\Product\Factory\ProductFactoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
+use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyAddressInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Factory\CompanyMemberFactoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 /**
@@ -236,16 +239,128 @@ final class TestCatalog
         return $variant;
     }
 
-    public function pendingApproval(OrderInterface $order, string $state = 'pending'): void
+    public function pendingApproval(OrderInterface $order, string $state = 'pending', string $createdAt = 'now', ?string $decidedAt = null): void
     {
         $this->connection()->insert('tmonier_purchase_approval_order_approval', [
             'order_id' => $order->getId(),
             'company_id' => $this->connection()->fetchOne('SELECT company_id FROM tmonier_company_order WHERE order_id = ?', [$order->getId()]) ?: null,
             'state' => $state,
-            'total' => $order->getTotal(),
+            'total' => (int) $this->connection()->fetchOne('SELECT total FROM sylius_order WHERE id = ?', [$order->getId()]),
             'currency_code' => $order->getCurrencyCode(),
+            'created_at' => (new \DateTimeImmutable($createdAt))->format('Y-m-d H:i:s'),
+            'decided_at' => null === $decidedAt ? null : (new \DateTimeImmutable($decidedAt))->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * The credit line of the company (the account of the trade credit plugin is owned by the company), written
+     * directly: the plugin offers no setter for the amount in use.
+     */
+    /**
+     * Copies a completed order of a company $count times, each copy with its own approval, by SQL: a volume
+     * that creating the orders one by one through Doctrine would make too slow.
+     */
+    public function cloneApprovals(OrderInterface $seed, int $count, string $state, string $createdAt, ?string $decidedAt = null): void
+    {
+        $connection = $this->connection();
+        $columns = array_values(array_filter(
+            array_map(static fn (\Doctrine\DBAL\Schema\Column $column): string => $column->getName(), $connection->createSchemaManager()->listTableColumns('sylius_order')),
+            static fn (string $name): bool => 'id' !== $name,
+        ));
+        $companyId = $connection->fetchOne('SELECT company_id FROM tmonier_company_order WHERE order_id = ?', [$seed->getId()]);
+        $total = (int) $connection->fetchOne('SELECT total FROM sylius_order WHERE id = ?', [$seed->getId()]);
+        $created = (new \DateTimeImmutable($createdAt))->format('Y-m-d H:i:s');
+        $decided = null === $decidedAt ? null : (new \DateTimeImmutable($decidedAt))->format('Y-m-d H:i:s');
+        $connection->beginTransaction();
+        for ($index = 0; $index < $count; ++$index) {
+            $id = $this->explicitId('sylius_order');
+            // A quoted literal, not a parameter: PostgreSQL cannot infer the type of a bound value inside CONCAT().
+            $suffix = $connection->quote(sprintf('-c%d', ++$this->sequence));
+            $select = implode(', ', array_map(static fn (string $name): string => match ($name) {
+                'number', 'token_value' => sprintf('CONCAT(%s, %s)', $name, $suffix),
+                default => $name,
+            }, $columns));
+            $connection->executeStatement(
+                sprintf('INSERT INTO sylius_order (%s) SELECT %s FROM sylius_order WHERE id = :seed', implode(', ', [...array_keys($id), ...$columns]), implode(', ', [...array_map(static fn (int $value): string => (string) $value, $id), ...[$select]])),
+                ['seed' => $seed->getId()],
+            );
+            $orderId = (int) ($id['id'] ?? $connection->lastInsertId());
+            $connection->insert('tmonier_company_order', [...$this->explicitId('tmonier_company_order'), 'company_id' => $companyId, 'order_id' => $orderId, 'created_at' => $created]);
+            $connection->insert('tmonier_purchase_approval_order_approval', [
+                'order_id' => $orderId, 'company_id' => $companyId, 'state' => $state, 'total' => $total,
+                'currency_code' => $seed->getCurrencyCode(), 'created_at' => $created, 'decided_at' => $decided,
+            ]);
+        }
+        $connection->commit();
+    }
+
+    public function tradeCreditAccount(CompanyInterface $company, int $limit, int $committed, string $currency = 'EUR', bool $hold = false): int
+    {
+        $this->connection()->insert('tmonier_trade_credit_account', [
+            ...$this->explicitId('tmonier_trade_credit_account'),
+            'owner_type' => 'company',
+            'owner_identifier' => (string) $company->getId(),
+            'currency_code' => $currency,
+            'credit_limit' => $limit,
+            'committed_amount' => $committed,
+            'allow_exceed' => 0,
+            'credit_hold' => $hold ? 1 : 0,
+            'block_when_overdue' => 0,
+            'enabled' => 1,
             'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ]);
+
+        return (int) $this->connection()->fetchOne('SELECT id FROM tmonier_trade_credit_account WHERE owner_type = ? AND owner_identifier = ?', ['company', (string) $company->getId()]);
+    }
+
+    /** An invoice on account still to be paid by the company, due on the given date. */
+    public function openInvoice(int $accountId, OrderInterface $order, int $amount, string $dueDate): void
+    {
+        $this->connection()->insert('tmonier_trade_credit_order_terms', [
+            'id' => Uuid::v7()->toRfc4122(),
+            'order_id' => $order->getId(),
+            'account_id' => $accountId,
+            'amount' => $amount,
+            'currency_code' => $order->getCurrencyCode(),
+            'net_days' => 30,
+            'end_of_month_mode' => 'none',
+            'due_date' => (new \DateTimeImmutable($dueDate))->format('Y-m-d'),
+            'state' => 'reserved',
+            'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /** The id of a persisted entity, as an integer. */
+    public function id(object $entity): int
+    {
+        Assert::methodExists($entity, 'getId');
+        $id = $entity->getId();
+        Assert::integer($id);
+
+        return $id;
+    }
+
+    /** The order is delivered to this address (a copy, as the checkout makes it). */
+    public function deliverTo(OrderInterface $order, string $street, string $city, string $postcode = '69007', string $country = 'FR'): void
+    {
+        $order->setShippingAddress($this->address($street, $city, $postcode, $country));
+        $this->entityManager()->flush();
+    }
+
+    /** An entry of the address book of the company: a label and an address. */
+    public function addressBookEntry(CompanyInterface $company, string $label, string $street, string $city, string $postcode = '69007', string $country = 'FR'): CompanyAddressInterface
+    {
+        $class = $this->container->getParameter('tmonier_company_accounts.model.company_address.class');
+        Assert::string($class);
+        $entry = new $class();
+        Assert::isInstanceOf($entry, CompanyAddressInterface::class);
+        $entry->setCompany($company);
+        $entry->setLabel($label);
+        $entry->setAddress($this->address($street, $city, $postcode, $country));
+        $this->entityManager()->persist($entry);
+        $this->entityManager()->flush();
+
+        return $entry;
     }
 
     public function entityManager(): EntityManagerInterface
@@ -254,6 +369,22 @@ final class TestCatalog
         $entityManager = $this->container->get('doctrine.orm.entity_manager');
 
         return $entityManager;
+    }
+
+    private function address(string $street, string $city, string $postcode, string $country): AddressInterface
+    {
+        /** @var FactoryInterface<AddressInterface> $factory */
+        $factory = $this->container->get('sylius.factory.address');
+        $address = $factory->createNew();
+        $address->setFirstName('Test');
+        $address->setLastName('Address');
+        $address->setStreet($street);
+        $address->setCity($city);
+        $address->setPostcode($postcode);
+        $address->setCountryCode($country);
+        $this->entityManager()->persist($address);
+
+        return $address;
     }
 
     private function connection(): Connection

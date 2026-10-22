@@ -18,7 +18,7 @@ final readonly class DbalProductRanking implements ProductRankingInterface
     public function rows(RankingScope $scope, ProductSort $sort, PageRequest $page): array
     {
         $rows = $this->connection->fetchAllAssociative(
-            sprintf('%s ORDER BY %s LIMIT %d OFFSET %d', $this->grouped(), $sort->orderBy(), $page->perPage, $page->offset()),
+            sprintf('%s ORDER BY %s LIMIT %d OFFSET %d', $this->grouped($scope), $sort->orderBy(), $page->perPage, $page->offset()),
             $this->parameters($scope) + ['product_locale' => $scope->localeCode, 'variant_locale' => $scope->localeCode],
         );
 
@@ -27,7 +27,7 @@ final readonly class DbalProductRanking implements ProductRankingInterface
 
     public function totals(RankingScope $scope): RankingTotals
     {
-        return $this->totalsOf($this->grouped(), $this->parameters($scope) + ['product_locale' => $scope->localeCode, 'variant_locale' => $scope->localeCode]);
+        return $this->totalsOf($this->grouped($scope), $this->parameters($scope) + ['product_locale' => $scope->localeCode, 'variant_locale' => $scope->localeCode]);
     }
 
     /** @param array<string, mixed> $row */
@@ -51,14 +51,14 @@ final readonly class DbalProductRanking implements ProductRankingInterface
         );
     }
 
-    private function grouped(): string
+    private function grouped(RankingScope $scope): string
     {
         return sprintf(
             'SELECT v.id AS variant_id, v.code AS code, pt.name AS product_name, vt.name AS variant_name, SUM(i.quantity) AS quantity, SUM(%s) AS spend, MAX(o.checkout_completed_at) AS last_purchase FROM %s %s INNER JOIN sylius_product_variant v ON v.id = i.variant_id LEFT JOIN sylius_product_translation pt ON pt.translatable_id = v.product_id AND pt.locale = :product_locale LEFT JOIN sylius_product_variant_translation vt ON vt.translatable_id = v.id AND vt.locale = :variant_locale WHERE %s GROUP BY v.id, v.code, pt.name, vt.name',
             $this->sql->lineNetTotal(),
             CountedOrderSql::FROM,
             CountedOrderSql::LINES,
-            $this->where(),
+            $this->where($scope),
         );
     }
 }

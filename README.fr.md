@@ -28,12 +28,76 @@ Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/thib
   - Mêmes commandes que les indicateurs. Une ligne compte pour son montant HT après remises de ligne (les acheteurs utilisent le total HT de la commande, donc leur total est la dépense de l'indicateur). Une devise n'est jamais additionnée à une autre.
   - Accessibilité : chaque classement est un tableau avec légende et en-têtes `th scope` ; l'anneau est `aria-hidden`, ses parts se distinguent par des motifs de remplissage et la légende (avec la part), pas par la couleur seule, et les couleurs ont un contraste d'au moins 7:1 sur blanc.
   - **Données personnelles** : seuls le prénom et le nom d'un membre sont lus et affichés. Aucune adresse e-mail, aucun téléphone ni adresse n'est sélectionné par les requêtes ni présent dans le HTML. L'entreprise est celle du membre connecté ; le classement (`buyers|products|categories`), le tri, la page et la devise sont contrôlés par liste blanche ou motif strict, et toute autre valeur donne la valeur par défaut ou un 404.
+- **Filtres** (`?member=`, `?site=`, `?from=&to=`), appliqués à tout le tableau de bord (indicateurs, graphique, classements, ventilation) et à l'export : un membre de l'entreprise, un site de livraison, et une période personnalisée de deux dates (qui remplace la période choisie plus haut, comparée à la période de même durée juste avant). Le membre et le site sont contrôlés contre les membres et le carnet d'adresses de l'entreprise du membre connecté ; toute autre valeur est ignorée.
+- **Achats par site de livraison** : la dépense de chaque adresse de livraison avec la part de chacune. Une adresse présente dans le carnet d'adresses de l'entreprise (`tmonier/sylius-company-accounts-plugin`) prend son libellé ; toute autre adresse, et une commande sans adresse, est regroupée sous « Autres adresses ». L'adresse d'une commande est une copie de celle choisie dans le carnet : les deux sont rapprochées sur la rue, le code postal, la ville et le pays.
+- **Achats par axe analytique** (centre de coût, projet...) : un bloc par axe fourni par l'application via `OrderDimensionProviderInterface` (voir plus bas). Le plugin n'en fournit aucun, et sans axe aucun bloc de ce type n'est affiché.
+- **Export CSV** de la sélection (`/account/company/insights/export`, même permission et mêmes filtres que le tableau de bord) : voir plus bas.
+- **Widgets des plugins compagnons** (approbations, encours) : voir plus bas.
 - **Accès** : administrateurs de l'entreprise uniquement (`COMPANY_VIEW_INSIGHTS`). Les acheteurs et les approbateurs reçoivent un 403 expliqué et n'ont pas l'onglet.
-- **Cloisonnement entre entreprises** : l'entreprise est celle du membre connecté, jamais un paramètre de la requête. Le seul paramètre est la période, tirée d'une liste blanche ; toute autre valeur est remplacée par la période par défaut.
+- **Cloisonnement entre entreprises** : l'entreprise est celle du membre connecté, jamais un paramètre de la requête. Les paramètres (période, membre, site, dates) sont contrôlés contre une liste blanche, un motif strict ou les membres et le carnet d'adresses de cette entreprise ; toute autre valeur est ignorée.
 - **Commandes comptées** : checkout terminé, non annulées, rattachées à l'entreprise par `CompanyOrder`, non en attente d'approbation.
 - **Montants** hors taxes, dans la devise de la commande. Avec plusieurs devises, il y a une ligne par devise et rien n'est converti.
 - Les agrégats sont calculés par la base de données (aucune entité chargée) en SQL standard : MySQL, MariaDB et PostgreSQL.
 - Libellés en français et en anglais. La page ne repose pas sur la couleur seule (flèches et phrases) et évite les classes de texte peu contrastées.
+
+## Ventilation, filtres et export CSV
+
+Les filtres sont au-dessus des chiffres (membre, site de livraison, deux dates, « Appliquer » / « Réinitialiser »). L'URL les porte (`?member=12&site=3&from=2026-03-01&to=2026-03-31`) : un lien peut être partagé dans l'entreprise, et chaque lien de la page les conserve.
+
+L'export compte **une ligne par ligne de commande**, hors taxes, pour la sélection (mêmes commandes que les indicateurs : finalisées, non annulées, pas en attente d'approbation) :
+
+| Colonne | Contenu |
+|---------|---------|
+| Date | jour de la validation, dans le fuseau du rapport |
+| Numéro | numéro de commande |
+| Référence PO | `OrderReferenceProviderInterface` (vide sans fournisseur) |
+| Acheteur | prénom et nom |
+| Site | libellé du carnet d'adresses, sinon l'adresse de livraison |
+| *(axe)* | une colonne par `OrderDimensionProviderInterface`, titrée par son libellé |
+| Code produit, Nom du produit | code de la variante ; nom du produit (et de la variante si différent) |
+| Quantité, PU HT, Total HT | le total est la ligne après les remises de la ligne ; le PU est ce total divisé par la quantité. Les ajustements de la commande (livraison, remise de commande) ne sont pas dans les lignes |
+| Devise | une devise par ligne, jamais additionnées |
+
+- **Format** : UTF-8 avec marque d'ordre des octets et `;` comme séparateur, virgule décimale, pour qu'un tableur en français l'ouvre directement avec les bons accents.
+- **Limites** : 24 mois et 50 000 lignes au plus. Au-delà, aucun fichier n'est produit (HTTP 422) et la page invite à réduire la période ; le lien d'export est remplacé par ce message quand la période est déjà trop longue.
+- **Formules** : une cellule de texte qui commence par `=`, `+`, `-`, `@`, une tabulation ou un retour chariot est préfixée d'une apostrophe, pour rester du texte dans le tableur. Cela couvre tous les textes (référence, acheteur, site, valeur d'axe, produit).
+- **Journal** : chaque export est journalisé au niveau `info` (entreprise, identifiant du membre, période, nombre de lignes, heure), sans contenu : ni nom, ni référence, ni numéro de commande.
+- **Accès** : `COMPANY_VIEW_INSIGHTS`, comme la page. L'entreprise vient du membre connecté ; les filtres sont contrôlés contre ses membres et son carnet d'adresses.
+
+### Points d'extension
+
+```php
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderDimensionProviderInterface;
+
+final class CostCenterDimension implements OrderDimensionProviderInterface
+{
+    public function code(): string { return 'cost-center'; }          // lettres, chiffres, tirets
+    public function label(): string { return 'app.insights.cost_center'; } // clé de traduction ou texte simple
+
+    public function values(array $orderIds): array // id de commande => valeur, en un appel pour toutes les commandes
+    {
+        // ex. SELECT id, cost_center FROM sylius_order WHERE id IN (...)
+    }
+}
+```
+
+Les services qui implémentent `OrderDimensionProviderInterface` ou `OrderReferenceProviderInterface` sont étiquetés par autoconfiguration (`tmonier_company_insights.order_dimension_provider`, `tmonier_company_insights.order_reference_provider`) ; sinon, étiquetez-les à la main. Un axe renvoie la valeur des commandes demandées (1 000 identifiants au plus à la fois) et rien ne suppose d'où elle vient. Une commande sans valeur est regroupée sous « Non renseigné ». Un fournisseur qui lève une exception est journalisé et son bloc est omis ; le reste de la page demeure. Avec plusieurs fournisseurs de référence, chaque commande prend la première référence non vide dans l'ordre des services (`priority` de l'étiquette, la plus haute d'abord).
+
+## Widgets des plugins compagnons
+
+Le tableau de bord affiche les blocs des plugins avec lesquels il sait dialoguer, **détectés à la construction du conteneur** : un compagnon non installé n'a pas de widget, pas d'erreur et pas de dépendance (`composer.json` ne fait que les *suggérer*).
+
+| Widget | Compagnon | Chiffres (services publics du compagnon) |
+|--------|-----------|------------------------------------------|
+| **Approbations** | [`tmonier/sylius-purchase-approval-plugin`](https://github.com/thibmonier/sylius-purchase-approval-plugin) | commandes en attente (nombre, montant, la plus ancienne en tête avec son ancienneté), délai médian de décision, taux de refus de la période, acheteurs le plus souvent soumis à approbation (signe d'un plafond peut-être trop bas), lien vers les approbations |
+| **Encours** | [`tmonier/sylius-trade-credit-plugin`](https://github.com/thibmonier/sylius-trade-credit-plugin) | limite de crédit, encours utilisé, disponible, montant et nombre de factures échues, prochaine échéance, jauge d'utilisation (`progress` avec son équivalent textuel), lien vers le relevé ; « Pas de compte de paiement à terme » pour une entreprise sans compte |
+
+- Les chiffres de l'encours viennent du `StatementBuilder` du compagnon. Le plugin d'approbation n'a pas d'agrégat pour le délai médian, le taux de refus et les acheteurs : ce sont des agrégats SQL sur sa table `tmonier_purchase_approval_order_approval` (entreprise du membre connecté uniquement, paramètres liés, sans plafond ; MySQL, MariaDB et PostgreSQL), le pont n'étant chargé que si le compagnon est installé. La période des approbations est celle de la validation de la commande (`checkout_completed_at`), comme les commandes comptées partout ailleurs. Taux de refus = refusées sur approuvées et refusées ; une demande expirée ou annulée n'est pas une décision. La part des « acheteurs » est le nombre d'approbations rapporté aux commandes que l'acheteur a validées dans la période. Les montants des approbations sont HT, comme le reste du tableau de bord (les approbateurs voient le montant TTC dans leur propre liste) ; les chiffres de l'encours sont ceux du relevé.
+- Le lien vers les approbations n'apparaît que si purchase-approval laisse le membre les ouvrir (par défaut ses approbateurs : `approver_roles`).
+- Un widget dont le service lève une exception affiche « Données momentanément indisponibles » et les autres demeurent ; l'erreur est journalisée avec le nom du widget et la classe de l'exception, sans message, trace ni donnée personnelle.
+- Les widgets sont ceux de l'entreprise ; les filtres membre, site et période personnalisée ne les restreignent pas (une ligne de crédit ou une file d'approbations n'est pas une affaire de site), la période restreint en revanche les chiffres des approbations.
+
+Votre propre widget implémente `InsightsWidgetProviderInterface` (`code()`, `title()`, `permission()`, `provide(WidgetContext)`) et renvoie un `InsightsWidget` (un gabarit Twig et ses données) ou `null` ; étiquetez-le `tmonier_company_insights.widget_provider` (autoconfiguré). `permission()` est un attribut de sécurité contrôlé sur l'entreprise avant le calcul du widget (`null` : la permission du tableau de bord suffit). Les passerelles vivent sous `Tmonier\SyliusCompanyInsightsPlugin\Bridge`.
 
 ## Captures d'écran
 
@@ -110,13 +174,14 @@ Avec [`tmonier/sylius-purchase-approval-plugin`](https://github.com/thibmonier/s
 
 | | Supporté |
 |-|----------|
-| PHP | 8.2, 8.3, 8.4 |
+| PHP | 8.2, 8.3, 8.4, 8.5 |
 | Symfony | 6.4, 7.4, 8.0 |
 | Sylius | 2.2 (`~2.2.0`), 2.3 (`~2.3.0`) |
 | Base de données | MySQL 8.4, MariaDB 11.4, PostgreSQL 17 |
 | Dépendance | `tmonier/sylius-company-accounts-plugin` ^1.1 |
+| Optionnels | `tmonier/sylius-purchase-approval-plugin` ^1.1 (approbations), `tmonier/sylius-trade-credit-plugin` ^1.1 (encours) |
 
-La matrice de CI est celle de `tmonier/sylius-company-accounts-plugin` et de `tmonier/sylius-agentic-feeds-plugin` : Sylius 2.2 sur PHP 8.2 à 8.4 avec Symfony 6.4 et 7.4, Sylius 2.3 sur PHP 8.3 et 8.4 avec Symfony 6.4, 7.4 et 8.0, plus des cellules MariaDB et PostgreSQL. PHP 8.5 n'a pas encore de cellule, aucun plugin compagnon n'en ayant. Impact de version : aucun code du plugin ne dépend d'une API propre à une version ; le voter garde la signature `mixed $vote = null` valable de Symfony 6.4 à 8.0 et le SQL est portable.
+La matrice de CI est celle de `tmonier/sylius-company-accounts-plugin` et de `tmonier/sylius-agentic-feeds-plugin` : Sylius 2.2 sur PHP 8.2 à 8.4 avec Symfony 6.4 et 7.4, Sylius 2.3 sur PHP 8.3 et 8.4 avec Symfony 6.4, 7.4 et 8.0, plus des cellules MariaDB et PostgreSQL. PHP 8.5 tourne sur Sylius 2.3 avec Symfony 8. Impact de version : aucun code du plugin ne dépend d'une API propre à une version ; le voter garde la signature `mixed $vote = null` valable de Symfony 6.4 à 8.0 et le SQL est portable (aucune fonction de date propre à un moteur ; l'export diffuse les lignes en flux et appelle `fputcsv` avec un caractère d'échappement vide explicite, valide dès PHP 8.2).
 
 ## Développement
 

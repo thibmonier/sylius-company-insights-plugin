@@ -4,5 +4,8 @@ tmonier_sylius_company_accounts:
 tmonier_sylius_purchase_approval:
     resource: "@TmonierSyliusPurchaseApprovalPlugin/config/routes.yaml"
 
+tmonier_sylius_trade_credit:
+    resource: "@TmonierSyliusTradeCreditPlugin/config/routes.yaml"
+
 tmonier_sylius_company_insights:
     resource: "@TmonierSyliusCompanyInsightsPlugin/config/routes.yaml"

@@ -15,7 +15,7 @@ final readonly class DbalCategoryRanking implements CategoryRankingInterface
     public function rows(RankingScope $scope): array
     {
         $rows = $this->connection->fetchAllAssociative(
-            sprintf('%s ORDER BY spend DESC, t.code ASC', $this->grouped()),
+            sprintf('%s ORDER BY spend DESC, t.code ASC', $this->grouped($scope)),
             $this->parameters($scope) + ['locale' => $scope->localeCode],
         );
 
@@ -28,14 +28,14 @@ final readonly class DbalCategoryRanking implements CategoryRankingInterface
         }, $rows);
     }
 
-    private function grouped(): string
+    private function grouped(RankingScope $scope): string
     {
         return sprintf(
             'SELECT t.id AS taxon_id, t.code AS code, tt.name AS name, SUM(%s) AS spend FROM %s %s INNER JOIN sylius_product_variant v ON v.id = i.variant_id INNER JOIN sylius_product p ON p.id = v.product_id LEFT JOIN sylius_taxon t ON t.id = p.main_taxon_id LEFT JOIN sylius_taxon_translation tt ON tt.translatable_id = t.id AND tt.locale = :locale WHERE %s GROUP BY t.id, t.code, tt.name',
             $this->sql->lineNetTotal(),
             CountedOrderSql::FROM,
             CountedOrderSql::LINES,
-            $this->where(),
+            $this->where($scope),
         );
     }
 }

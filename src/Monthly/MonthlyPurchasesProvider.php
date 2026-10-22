@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusCompanyInsightsPlugin\Monthly;
 
 use Psr\Clock\ClockInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 
 /**
@@ -27,11 +28,11 @@ final readonly class MonthlyPurchasesProvider
      *
      * @return non-empty-list<MonthlySeries>
      */
-    public function provide(int $companyId, string $fallbackCurrency): array
+    public function provide(int $companyId, string $fallbackCurrency, PurchaseFilter $filter = new PurchaseFilter()): array
     {
         $months = $this->months();
         $perCurrency = [];
-        foreach ($this->statistics->perMonth($companyId, $months) as $totals) {
+        foreach ($this->statistics->perMonth($companyId, $months, $filter) as $totals) {
             $perCurrency[$totals->currencyCode][$totals->monthIndex] = $totals;
         }
         ksort($perCurrency);

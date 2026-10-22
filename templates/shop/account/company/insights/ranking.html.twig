@@ -1,6 +1,6 @@
 {% extends '@SyliusShop/account/common/index.html.twig' %}
 
 {% set prefixes = ['tmonier_company_insights_shop.account.company.insights_ranking'] %}
-{% set attrs = { company, member, dashboard, kind, ranking, currencies, sort, sorts, page: 'insights', active_tab: 'insights' } %}
+{% set attrs = { company, member, dashboard, selection, kind, ranking, currencies, sort, sorts, page: 'insights', active_tab: 'insights' } %}
 
 {% block title %}{{ kind.title|trans }} | {{ 'tmonier_company_insights.ui.title'|trans }} | {{ parent() }}{% endblock %}

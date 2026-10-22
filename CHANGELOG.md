@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-22
+
+### Added
+- Filters of the whole dashboard (indicators, chart, rankings, breakdown) and of the export: a member of the company (`?member=`), a delivery site of its address book (`?site=`) and a custom period of two dates (`?from=&to=`, compared with the period of the same duration just before). The member and the site are checked against the company of the signed-in member; any other value is ignored.
+- Purchases per delivery site, with the label of the address book of the company ("Other addresses" for the rest), and purchases per analytical axis through the new extension point `OrderDimensionProviderInterface` (the plugin ships no axis; without one, no block).
+- CSV export of the selection (`/account/company/insights/export`, same permission and filters as the dashboard): one line per order line, UTF-8 with BOM, `;` separator, decimal comma, cells starting with `=`, `+`, `-`, `@` neutralised, 24 months and 50 000 lines at most (nothing is produced beyond), content-free log of each export. `OrderReferenceProviderInterface` fills the "PO reference" column.
+- Dashboard widgets: `InsightsWidgetProviderInterface` and the widget registry (permission per widget, a failing widget becomes "Data temporarily unavailable" and is logged without personal data). Two bridges detected when the companion is installed, with no new required dependency: **Approvals** (`tmonier/sylius-purchase-approval-plugin`: orders waiting with their age, median time to decide, refusal rate, buyers most often submitted to approval) and **Credit** (`tmonier/sylius-trade-credit-plugin`: limit, used, available, overdue, next due date, usage gauge).
+- English and French labels for all of the above.
+
+### Fixed
+- CSV export: the "PO reference" column merges all the `OrderReferenceProviderInterface` services (first non-empty reference per order, in the order of the tag priority) instead of using the first service only; the export log date comes from the injected clock.
+- CSV export: the 24-month limit is exact on the 29 February (it overflowed to 1 March, accepting one day too many).
+
+### Changed
+- Approvals widget: the figures are SQL aggregates on the table of the purchase-approval plugin instead of the 2 000 latest entities loaded without ordering, so nothing is truncated silently and no customer is loaded one by one; the amounts are tax exclusive like the rest of the dashboard (they were tax included) and the period is the one of the checkout of the order (`checkout_completed_at`), not the creation date of the request. The median time to decide is read by OFFSET on the ordered durations (MySQL, MariaDB, PostgreSQL).
+- Breakdown by analytical axis: the spend per order (tax exclusive, one row per counted order, ids and amounts only) is still read in full because the axes are supplied by the application and cannot be grouped in SQL; the values are requested by chunks of 1 000 ids. Documented bound, see `BreakdownProvider`.
+- CI and `composer.json`: `tmonier/sylius-trade-credit-plugin` joins the dev dependencies (tests of the Credit widget); `suggest` lists both companions.
+
 ## [0.1.1] - 2026-10-22
 
 ### Fixed

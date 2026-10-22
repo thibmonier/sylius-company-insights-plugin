@@ -3,15 +3,71 @@
 {% set periods = dashboard.periods %}
 {% set locale = app.request.locale %}
 
-<nav aria-label="{{ 'tmonier_company_insights.ui.period_selector'|trans }}" class="mb-4">
+{% set selection = context.selection %}
+{% set filter_query = selection.filterQuery %}
+{% set display_parameters = (context.metric.value != 'amount' ? {metric: context.metric.value} : {})|merge(context.sort.value != 'spend' ? {sort: context.sort.value} : {}) %}
+
+<nav aria-label="{{ 'tmonier_company_insights.ui.period_selector'|trans }}" class="mb-3">
     <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-periods') }}>
         {% for key in context.period_keys %}
             <li class="nav-item">
-                <a class="nav-link {{ key == periods.key ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: key.value}|merge(context.metric.value != 'amount' ? {metric: context.metric.value} : {})|merge(context.sort.value != 'spend' ? {sort: context.sort.value} : {})) }}" {% if key == periods.key %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-period', key.value) }}>{{ key.label|trans }}</a>
+                <a class="nav-link {{ key == periods.key ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: key.value}|merge(filter_query)|merge(display_parameters)) }}" {% if key == periods.key %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-period', key.value) }}>{{ key.label|trans }}</a>
             </li>
         {% endfor %}
     </ul>
 </nav>
+
+<form method="get" action="{{ path('tmonier_company_insights_shop_insights') }}" class="card card-body mb-4" aria-labelledby="insights-filters-title" {{ sylius_test_html_attribute('tmonier-insights-filters') }}>
+    <h3 class="h6" id="insights-filters-title">{{ 'tmonier_company_insights.filter.title'|trans }}</h3>
+    {% if not selection.custom %}<input type="hidden" name="period" value="{{ periods.key.value }}">{% endif %}
+    {% for name, value in display_parameters %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-6 col-lg-3">
+            <label for="insights-filter-member" class="form-label">{{ 'tmonier_company_insights.filter.member'|trans }}</label>
+            <select id="insights-filter-member" name="member" class="form-select" {{ sylius_test_html_attribute('tmonier-insights-filter-member') }}>
+                <option value="">{{ 'tmonier_company_insights.filter.all_members'|trans }}</option>
+                {% for choice in context.members %}
+                    <option value="{{ choice.customerId }}" {{ selection.filter.customerId == choice.customerId ? 'selected' }}>{{ choice.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label for="insights-filter-site" class="form-label">{{ 'tmonier_company_insights.filter.site'|trans }}</label>
+            <select id="insights-filter-site" name="site" class="form-select" {{ sylius_test_html_attribute('tmonier-insights-filter-site') }}>
+                <option value="">{{ 'tmonier_company_insights.filter.all_sites'|trans }}</option>
+                {% for choice in context.sites %}
+                    <option value="{{ choice.addressId }}" {{ selection.filter.addressId == choice.addressId ? 'selected' }}>{{ choice.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-lg-2">
+            <label for="insights-filter-from" class="form-label">{{ 'tmonier_company_insights.filter.from'|trans }}</label>
+            <input type="date" id="insights-filter-from" name="from" class="form-control" min="2000-01-01" value="{{ selection.custom ? periods.current.from|date('Y-m-d', false) }}" {{ sylius_test_html_attribute('tmonier-insights-filter-from') }}>
+        </div>
+        <div class="col-6 col-lg-2">
+            <label for="insights-filter-to" class="form-label">{{ 'tmonier_company_insights.filter.to'|trans }}</label>
+            <input type="date" id="insights-filter-to" name="to" class="form-control" min="2000-01-01" value="{{ selection.custom ? periods.current.lastDay|date('Y-m-d', false) }}" {{ sylius_test_html_attribute('tmonier-insights-filter-to') }}>
+        </div>
+        <div class="col-12 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary" {{ sylius_test_html_attribute('tmonier-insights-filter-apply') }}>{{ 'tmonier_company_insights.filter.apply'|trans }}</button>
+            <a class="btn btn-outline-secondary" href="{{ path('tmonier_company_insights_shop_insights') }}" {{ sylius_test_html_attribute('tmonier-insights-filter-reset') }}>{{ 'tmonier_company_insights.filter.reset'|trans }}</a>
+        </div>
+    </div>
+    <p class="form-text mb-0 mt-2">{{ 'tmonier_company_insights.filter.help'|trans }}</p>
+</form>
+
+{% if context.export_error %}
+    <div class="alert alert-danger" role="alert" {{ sylius_test_html_attribute('tmonier-insights-export-error') }}>{{ context.export_error|trans }}</div>
+{% endif %}
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3" {{ sylius_test_html_attribute('tmonier-insights-export') }}>
+    {% if context.export_allowed %}
+        <a class="btn btn-outline-primary" href="{{ path('tmonier_company_insights_shop_export', selection.query) }}" {{ sylius_test_html_attribute('tmonier-insights-export-link') }}>{{ 'tmonier_company_insights.export.button'|trans }}</a>
+        <span>{{ 'tmonier_company_insights.export.help'|trans }}</span>
+    {% else %}
+        <span {{ sylius_test_html_attribute('tmonier-insights-export-too-long') }}>{{ 'tmonier_company_insights.export.refused.period_too_long'|trans }}</span>
+    {% endif %}
+</div>
 
 <h2 class="h4" {{ sylius_test_html_attribute('tmonier-insights-period-title') }}>
     {{ 'tmonier_company_insights.ui.period_title'|trans({'%period%': periods.key.label|trans, '%from%': periods.current.from|format_date('medium'), '%to%': periods.current.lastDay|format_date('medium')}) }}

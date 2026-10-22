@@ -1,9 +1,14 @@
 imports:
     - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusPurchaseApprovalPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusTradeCreditPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusCompanyInsightsPlugin/config/config.yaml" }
     - { resource: "dbal_savepoints.php" }
     - { resource: "services.php" }
+
+# The administrators of a company may also approve (the link of the approvals widget follows this rule).
+tmonier_sylius_purchase_approval:
+    approver_roles: [approver, admin]
 
 # Demo company (dev database): admin, buyer and approver of Acme Industries
 # (admin@acme-industries.example.com / sylius), orders of its members.

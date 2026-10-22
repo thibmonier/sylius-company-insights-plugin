@@ -11,6 +11,7 @@ enum PeriodKey: string
     case CurrentQuarter = 'current_quarter';
     case Last12Months = 'last_12_months';
     case CurrentYear = 'current_year';
+    case Custom = 'custom';
 
     public static function default(): self
     {
@@ -20,7 +21,15 @@ enum PeriodKey: string
     /** Anything that is not exactly a known key (missing, unknown, array...) is the default period. */
     public static function fromRequest(mixed $value): self
     {
-        return is_string($value) ? (self::tryFrom($value) ?? self::default()) : self::default();
+        $key = is_string($value) ? self::tryFrom($value) : null;
+
+        return null === $key || self::Custom === $key ? self::default() : $key;
+    }
+
+    /** The periods the member picks with one click; the custom one comes from two dates. */
+    public static function presets(): array
+    {
+        return [self::Last30Days, self::CurrentQuarter, self::Last12Months, self::CurrentYear];
     }
 
     /** Translation key of the label of the period. */

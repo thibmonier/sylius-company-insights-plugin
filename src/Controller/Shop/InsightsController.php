@@ -6,11 +6,21 @@ namespace Tmonier\SyliusCompanyInsightsPlugin\Controller\Shop;
 
 use Sylius\Component\Currency\Context\CurrencyContextInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Member\CurrentMemberResolverInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\BreakdownProvider;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\CsvExporter;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\ExportLimits;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\ExportRefused;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\ExportRequest;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\FilterChoicesInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\Selection;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\SelectionFactory;
 use Tmonier\SyliusCompanyInsightsPlugin\Indicators\CurrencyIndicators;
 use Tmonier\SyliusCompanyInsightsPlugin\Indicators\Dashboard;
 use Tmonier\SyliusCompanyInsightsPlugin\Indicators\DashboardProvider;
@@ -27,6 +37,8 @@ use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingKind;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingScope;
 use Tmonier\SyliusCompanyInsightsPlugin\Ranking\RankingsProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Security\InsightsPermissions;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\InsightsWidgetRegistry;
+use Tmonier\SyliusCompanyInsightsPlugin\Widget\WidgetContext;
 
 /**
  * "Purchasing dashboard" of the customer account (behind the Sylius `/account` access control) and
@@ -45,6 +57,11 @@ final class InsightsController extends AbstractController
         private readonly MonthlyPurchasesProvider $monthlyPurchasesProvider,
         private readonly RankingsProvider $rankingsProvider,
         private readonly CurrencyContextInterface $currencyContext,
+        private readonly SelectionFactory $selectionFactory,
+        private readonly FilterChoicesInterface $filterChoices,
+        private readonly BreakdownProvider $breakdownProvider,
+        private readonly CsvExporter $csvExporter,
+        private readonly InsightsWidgetRegistry $widgetRegistry,
     ) {
     }
 
@@ -55,23 +72,42 @@ final class InsightsController extends AbstractController
             return $this->forbidden($company, $member);
         }
 
-        $query = $request->query->all();
-        $currency = $this->currencyContext->getCurrencyCode();
-        $dashboard = $this->dashboardProvider->provide($company->getId() ?? 0, PeriodKey::fromRequest($query['period'] ?? null), $currency);
-        $sort = ProductSort::fromRequest($query['sort'] ?? null);
+        return $this->dashboard($request, $member, $company);
+    }
 
-        return $this->render(self::TEMPLATES . 'show.html.twig', [
-            'company' => $company,
-            'member' => $member,
-            'dashboard' => $dashboard,
-            'monthly' => $this->monthlyPurchasesProvider->provide($company->getId() ?? 0, $currency),
-            'rankings' => $this->rankingsProvider->top($company->getId() ?? 0, $dashboard->periods->current, $this->currencyCodes($dashboard), $request->getLocale(), $sort),
-            'metric' => Metric::fromRequest($query['metric'] ?? null),
-            'metrics' => Metric::cases(),
-            'sort' => $sort,
-            'sorts' => ProductSort::cases(),
-            'period_keys' => PeriodKey::cases(),
-        ]);
+    public function exportAction(Request $request): Response
+    {
+        [$member, $company] = $this->memberAndCompany();
+        if (!$this->isGranted(InsightsPermissions::COMPANY_VIEW_INSIGHTS, $company)) {
+            return $this->forbidden($company, $member);
+        }
+
+        $selection = $this->selectionFactory->create($company->getId() ?? 0, $request->query->all());
+        $exportRequest = new ExportRequest($company->getId() ?? 0, $member->getId(), $selection->periods->current, $selection->filter, $request->getLocale());
+
+        try {
+            $this->csvExporter->assertAllowed($exportRequest);
+        } catch (ExportRefused $refused) {
+            return $this->dashboard($request, $member, $company, $refused->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $response = new StreamedResponse(function () use ($exportRequest): void {
+            $stream = fopen('php://output', 'wb');
+            if (false === $stream) {
+                return;
+            }
+            $this->csvExporter->write($exportRequest, $stream);
+            fclose($stream);
+        });
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            sprintf('purchases-%s-%s.csv', $selection->periods->current->from->format('Y-m-d'), $selection->periods->current->lastDay()->format('Y-m-d')),
+        ));
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Cache-Control', 'private, no-store');
+
+        return $response;
     }
 
     public function rankingAction(Request $request, string $ranking): Response
@@ -83,15 +119,17 @@ final class InsightsController extends AbstractController
         }
 
         $query = $request->query->all();
-        $dashboard = $this->dashboardProvider->provide($company->getId() ?? 0, PeriodKey::fromRequest($query['period'] ?? null), $this->currencyContext->getCurrencyCode());
+        $selection = $this->selection($company, $query);
+        $dashboard = $this->dashboardProvider->provideFor($company->getId() ?? 0, $selection->periods, $this->currencyContext->getCurrencyCode(), $selection->filter);
         $currencies = $this->currencyCodes($dashboard);
         $sort = ProductSort::fromRequest($query['sort'] ?? null);
-        $scope = new RankingScope($company->getId() ?? 0, $dashboard->periods->current, $this->chooseCurrency($currencies, $query['currency'] ?? null), $request->getLocale());
+        $scope = new RankingScope($company->getId() ?? 0, $dashboard->periods->current, $this->chooseCurrency($currencies, $query['currency'] ?? null), $request->getLocale(), $selection->filter);
 
         return $this->render(self::TEMPLATES . 'ranking.html.twig', [
             'company' => $company,
             'member' => $member,
             'dashboard' => $dashboard,
+            'selection' => $selection,
             'kind' => $kind,
             'ranking' => $this->ranking($kind, $scope, $sort, PageRequest::fromRequest($query['page'] ?? null)),
             'currencies' => $currencies,
@@ -110,7 +148,43 @@ final class InsightsController extends AbstractController
         };
     }
 
-    /** @return array{0: CompanyMemberInterface, 1: CompanyInterface} */
+    private function dashboard(Request $request, CompanyMemberInterface $member, CompanyInterface $company, ?string $exportError = null, int $status = Response::HTTP_OK): Response
+    {
+        $query = $request->query->all();
+        $companyId = $company->getId() ?? 0;
+        $currency = $this->currencyContext->getCurrencyCode();
+        $selection = $this->selection($company, $query);
+        $dashboard = $this->dashboardProvider->provideFor($companyId, $selection->periods, $currency, $selection->filter);
+        $sort = ProductSort::fromRequest($query['sort'] ?? null);
+        $currencies = $this->currencyCodes($dashboard);
+
+        return $this->render(self::TEMPLATES . 'show.html.twig', [
+            'company' => $company,
+            'member' => $member,
+            'dashboard' => $dashboard,
+            'selection' => $selection,
+            'members' => $this->filterChoices->members($companyId),
+            'sites' => $this->filterChoices->sites($companyId),
+            'widgets' => $this->widgetRegistry->widgets(new WidgetContext($company, $member, $selection->periods, $selection->filter, $request->getLocale())),
+            'monthly' => $this->monthlyPurchasesProvider->provide($companyId, $currency, $selection->filter),
+            'rankings' => $this->rankingsProvider->top($companyId, $dashboard->periods->current, $currencies, $request->getLocale(), $sort, $selection->filter),
+            'breakdowns' => $this->breakdownProvider->forCurrencies(new RankingScope($companyId, $dashboard->periods->current, $currency, $request->getLocale(), $selection->filter), $currencies),
+            'metric' => Metric::fromRequest($query['metric'] ?? null),
+            'metrics' => Metric::cases(),
+            'sort' => $sort,
+            'sorts' => ProductSort::cases(),
+            'period_keys' => PeriodKey::presets(),
+            'export_allowed' => ExportLimits::allowsPeriod($dashboard->periods->current),
+            'export_error' => $exportError ?? '',
+        ], new Response(status: $status));
+    }
+
+    private function selection(CompanyInterface $company, array $query): Selection
+    {
+        return $this->selectionFactory->create($company->getId() ?? 0, $query);
+    }
+
+    /** @return array{CompanyMemberInterface, CompanyInterface} */
     private function memberAndCompany(): array
     {
         $member = $this->currentMemberResolver->getMember();

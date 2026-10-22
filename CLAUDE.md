@@ -26,5 +26,9 @@ shop pages need the Webpack entrypoints of the test application (`composer front
 - `Monthly/` (`MonthlyPurchasesProvider`, `DbalMonthlyPurchaseStatistics`: 12 months + previous year, one series per currency, months in the report timezone; allow-listed `Metric`).
 - `Ranking/` (top buyers, products and categories: `RankingsProvider`, `Dbal*Ranking` on the SQL of `CountedOrderSql`, allow-listed `RankingKind`, `ProductSort`, `PageRequest`; categories are read whole so that `Shares` adds up to 100).
 - `Approval/` (optional port for orders waiting for approval).
+- `Filter/` (`PurchaseFilter` member + site, `SelectionFactory`: period, dates, member and site validated against the company of the signed-in member; the filter SQL is appended to every query through `PurchaseFilter::sql()` / `parameters()`).
+- `Breakdown/` (delivery sites and application axes: `OrderDimensionProviderInterface`, `OrderReferenceProviderInterface`; the plugin ships no axis).
+- `Export/` (`CsvExporter`, `CsvCell` formula neutralisation, `ExportLimits` 24 months / 50 000 lines; refused before any output).
+- `Widget/` (`InsightsWidgetProviderInterface`, `InsightsWidgetRegistry`: permission per widget, a failing widget is "unavailable" and logged without its message) and `Bridge/PurchaseApproval`, `Bridge/TradeCredit` (loaded only when the companion is installed; `composer.json` only suggests them, trade credit is a dev dependency for the tests).
 - `Indicators/` (`DashboardProvider`, `Variation`), `Security/InsightsVoter`, `Controller/Shop/InsightsController`.
 - Rule: the company comes from the signed-in member, never from the request.
