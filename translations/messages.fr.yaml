@@ -73,6 +73,7 @@ tmonier_company_insights:
         current_quarter: 'Trimestre en cours'
         last_12_months: '12 derniers mois'
         current_year: 'Année en cours'
+        custom: 'Période personnalisée'
     indicator:
         spend: 'Dépense HT'
         orders: 'Commandes'
@@ -85,3 +86,43 @@ tmonier_company_insights:
         up: 'Hausse'
         down: 'Baisse'
         flat: 'Stable'
+    filter:
+        title: 'Filtres'
+        member: 'Membre'
+        all_members: 'Tous les membres'
+        site: 'Site de livraison'
+        all_sites: 'Tous les sites'
+        from: 'Du'
+        to: 'Au'
+        apply: 'Appliquer'
+        reset: 'Réinitialiser'
+        help: "Les filtres s'appliquent à tout le tableau de bord et à l'export. Deux dates remplacent la période choisie ci-dessus."
+    breakdown:
+        empty: "Rien n'a été acheté sur cette période."
+        caption: '%title% en %currency%, avec la part de la dépense'
+        other_addresses: 'Autres adresses'
+        not_set: 'Non renseigné'
+        column:
+            site: 'Site'
+            value: 'Valeur'
+        sites:
+            title: 'Achats par site de livraison'
+            description: "Où les commandes sont livrées. Une adresse de livraison présente dans le carnet d'adresses de votre entreprise prend son libellé ; toute autre apparaît sous « Autres adresses ». Montants hors taxes."
+    export:
+        button: 'Exporter en CSV'
+        help: 'Une ligne par ligne de commande, hors taxes, pour la période et les filtres ci-dessus. Fichier UTF-8 à séparateur point-virgule, lisible directement dans un tableur.'
+        column:
+            date: 'Date'
+            number: 'Numéro'
+            po_reference: 'Référence PO'
+            buyer: 'Acheteur'
+            site: 'Site'
+            product_code: 'Code produit'
+            product_name: 'Nom du produit'
+            quantity: 'Quantité'
+            unit_price: 'PU HT'
+            total: 'Total HT'
+            currency: 'Devise'
+        refused:
+            period_too_long: "L'export couvre 24 mois au plus. Réduisez la période et réessayez."
+            too_many_lines: "Cette période compte plus de 50 000 lignes de commande, ce qui est trop pour un seul export. Réduisez la période et réessayez."

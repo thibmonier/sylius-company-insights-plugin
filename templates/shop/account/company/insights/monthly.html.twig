@@ -8,7 +8,6 @@
 {% set monthly = context.monthly %}
 {% set metric = context.metric %}
 {% set locale = app.request.locale %}
-{% set period_key = context.dashboard.periods.key.value %}
 {% set categories = [] %}
 {% set chart_series = [] %}
 {% for series in monthly %}
@@ -37,7 +36,7 @@
             <ul class="nav nav-pills" {{ sylius_test_html_attribute('tmonier-insights-metrics') }}>
                 {% for choice in context.metrics %}
                     <li class="nav-item">
-                        <a class="nav-link {{ choice == metric ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', {period: period_key, metric: choice.value}|merge(context.sort.value != 'spend' ? {sort: context.sort.value} : {})) }}" {% if choice == metric %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-metric', choice.value) }}>{{ choice.label|trans }}</a>
+                        <a class="nav-link {{ choice == metric ? 'active' }}" href="{{ path('tmonier_company_insights_shop_insights', context.selection.query|merge({metric: choice.value})|merge(context.sort.value != 'spend' ? {sort: context.sort.value} : {})) }}" {% if choice == metric %}aria-current="true"{% endif %} {{ sylius_test_html_attribute('tmonier-insights-metric', choice.value) }}>{{ choice.label|trans }}</a>
                     </li>
                 {% endfor %}
             </ul>

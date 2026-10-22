@@ -1,0 +1,51 @@
+{#
+ # Purchases per delivery site and, when the application supplies one, per analytical axis (cost centre...),
+ # one set per currency. Each block is a table: the figures are in text, the bar only repeats the share.
+ #}
+{% set context = hookable_metadata.context %}
+{% set locale = app.request.locale %}
+{% set several = context.breakdowns|length > 1 %}
+
+{% for set in context.breakdowns %}
+    {% set suffix = several ? ' (' ~ set.currencyCode ~ ')' : '' %}
+    {% for breakdown in [set.sites]|merge(set.dimensions) %}
+        {% set shares = breakdown.shares %}
+        {% set heading = 'insights-breakdown-' ~ breakdown.code ~ '-' ~ set.currencyCode %}
+        <section aria-labelledby="{{ heading }}" class="card mt-4" {{ sylius_test_html_attribute('tmonier-insights-breakdown', breakdown.code ~ '-' ~ set.currencyCode) }}>
+            <div class="card-body">
+                <h3 class="h5" id="{{ heading }}">{{ breakdown.title|trans }}{{ suffix }}</h3>
+                {% if breakdown.code == 'sites' %}<p>{{ 'tmonier_company_insights.breakdown.sites.description'|trans }}</p>{% endif %}
+                {% if breakdown.empty %}
+                    <p class="mb-0" {{ sylius_test_html_attribute('tmonier-insights-breakdown-empty') }}>{{ 'tmonier_company_insights.breakdown.empty'|trans }}</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <caption class="caption-top">{{ 'tmonier_company_insights.breakdown.caption'|trans({'%title%': breakdown.title|trans, '%currency%': set.currencyCode}) }}</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">{{ (breakdown.code == 'sites' ? 'tmonier_company_insights.breakdown.column.site' : 'tmonier_company_insights.breakdown.column.value')|trans }}</th>
+                                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.orders'|trans }}</th>
+                                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.spend'|trans }}</th>
+                                    <th scope="col" class="text-end">{{ 'tmonier_company_insights.ranking.column.share'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in breakdown.rows %}
+                                    <tr {{ sylius_test_html_attribute('tmonier-insights-breakdown-row') }}>
+                                        <th scope="row">{{ row.label ?? (breakdown.code == 'sites' ? 'tmonier_company_insights.breakdown.other_addresses'|trans : 'tmonier_company_insights.breakdown.not_set'|trans) }}</th>
+                                        <td class="text-end">{{ row.ordersCount|format_number }}</td>
+                                        <td class="text-end" data-value="{{ row.spend }}">{{ row.spend|sylius_format_money(set.currencyCode, locale) }}</td>
+                                        <td class="text-end">
+                                            <progress class="align-middle me-2" value="{{ shares[loop.index0] }}" max="100" aria-hidden="true"></progress>
+                                            <span>{{ shares[loop.index0] }} %</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    {% endfor %}
+{% endfor %}

@@ -73,6 +73,7 @@ tmonier_company_insights:
         current_quarter: 'Current quarter'
         last_12_months: 'Last 12 months'
         current_year: 'Current year'
+        custom: 'Custom period'
     indicator:
         spend: 'Spend (excl. tax)'
         orders: 'Orders'
@@ -85,3 +86,43 @@ tmonier_company_insights:
         up: 'Increase'
         down: 'Decrease'
         flat: 'No change'
+    filter:
+        title: 'Filters'
+        member: 'Member'
+        all_members: 'All members'
+        site: 'Delivery site'
+        all_sites: 'All sites'
+        from: 'From'
+        to: 'To'
+        apply: 'Apply'
+        reset: 'Reset'
+        help: 'The filters apply to the whole dashboard and to the export. Two dates replace the period chosen above.'
+    breakdown:
+        empty: 'Nothing was bought in this period.'
+        caption: '%title% in %currency%, with the share of the spend'
+        other_addresses: 'Other addresses'
+        not_set: 'Not set'
+        column:
+            site: 'Site'
+            value: 'Value'
+        sites:
+            title: 'Purchases per delivery site'
+            description: 'Where the orders are delivered. A delivery address that is in the address book of your company takes its label; any other appears under "Other addresses". Amounts exclude tax.'
+    export:
+        button: 'Export CSV'
+        help: 'One line per order line, excluding tax, for the period and the filters above. UTF-8 file with semicolons, opened directly in a spreadsheet.'
+        column:
+            date: 'Date'
+            number: 'Number'
+            po_reference: 'PO reference'
+            buyer: 'Buyer'
+            site: 'Site'
+            product_code: 'Product code'
+            product_name: 'Product name'
+            quantity: 'Quantity'
+            unit_price: 'Unit price excl. tax'
+            total: 'Total excl. tax'
+            currency: 'Currency'
+        refused:
+            period_too_long: 'The export covers 24 months at most. Reduce the period and try again.'
+            too_many_lines: 'This period holds more than 50,000 order lines, which is too many for one export. Reduce the period and try again.'

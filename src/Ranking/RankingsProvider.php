@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Ranking;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 
 /**
@@ -27,12 +28,12 @@ final readonly class RankingsProvider
      *
      * @return list<CurrencyRankings>
      */
-    public function top(int $companyId, Period $period, array $currencyCodes, string $localeCode, ProductSort $sort): array
+    public function top(int $companyId, Period $period, array $currencyCodes, string $localeCode, ProductSort $sort, PurchaseFilter $filter = new PurchaseFilter()): array
     {
         $top = PageRequest::top();
 
-        return array_map(function (string $code) use ($companyId, $period, $localeCode, $sort, $top): CurrencyRankings {
-            $scope = new RankingScope($companyId, $period, $code, $localeCode);
+        return array_map(function (string $code) use ($companyId, $period, $localeCode, $sort, $top, $filter): CurrencyRankings {
+            $scope = new RankingScope($companyId, $period, $code, $localeCode, $filter);
 
             return new CurrencyRankings($code, $this->buyers($scope, $top), $this->products($scope, $sort, $top), $this->categories($scope, $top));
         }, $currencyCodes);

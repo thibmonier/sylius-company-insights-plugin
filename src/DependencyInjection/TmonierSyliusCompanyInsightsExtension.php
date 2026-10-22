@@ -10,6 +10,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderDimensionProviderInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\OrderReferenceProviderInterface;
 use Tmonier\SyliusPurchaseApprovalPlugin\Entity\OrderApprovalInterface;
 
 final class TmonierSyliusCompanyInsightsExtension extends Extension implements PrependExtensionInterface
@@ -29,6 +31,9 @@ final class TmonierSyliusCompanyInsightsExtension extends Extension implements P
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.php');
+
+        $container->registerForAutoconfiguration(OrderDimensionProviderInterface::class)->addTag('tmonier_company_insights.order_dimension_provider');
+        $container->registerForAutoconfiguration(OrderReferenceProviderInterface::class)->addTag('tmonier_company_insights.order_reference_provider');
 
         // Optional: orders held by tmonier/sylius-purchase-approval-plugin are reported apart.
         if (true === ($container->hasParameter(self::PURCHASE_APPROVAL_PARAMETER) ? $container->getParameter(self::PURCHASE_APPROVAL_PARAMETER) : false)) {

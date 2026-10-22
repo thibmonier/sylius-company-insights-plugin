@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Container\ContainerInterface;
+use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ChannelPricingInterface;
@@ -23,6 +24,7 @@ use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
 use Sylius\Component\Product\Factory\ProductFactoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
+use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyAddressInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Factory\CompanyMemberFactoryInterface;
@@ -248,12 +250,61 @@ final class TestCatalog
         ]);
     }
 
+    /** The id of a persisted entity, as an integer. */
+    public function id(object $entity): int
+    {
+        Assert::methodExists($entity, 'getId');
+        $id = $entity->getId();
+        Assert::integer($id);
+
+        return $id;
+    }
+
+    /** The order is delivered to this address (a copy, as the checkout makes it). */
+    public function deliverTo(OrderInterface $order, string $street, string $city, string $postcode = '69007', string $country = 'FR'): void
+    {
+        $order->setShippingAddress($this->address($street, $city, $postcode, $country));
+        $this->entityManager()->flush();
+    }
+
+    /** An entry of the address book of the company: a label and an address. */
+    public function addressBookEntry(CompanyInterface $company, string $label, string $street, string $city, string $postcode = '69007', string $country = 'FR'): CompanyAddressInterface
+    {
+        $class = $this->container->getParameter('tmonier_company_accounts.model.company_address.class');
+        Assert::string($class);
+        $entry = new $class();
+        Assert::isInstanceOf($entry, CompanyAddressInterface::class);
+        $entry->setCompany($company);
+        $entry->setLabel($label);
+        $entry->setAddress($this->address($street, $city, $postcode, $country));
+        $this->entityManager()->persist($entry);
+        $this->entityManager()->flush();
+
+        return $entry;
+    }
+
     public function entityManager(): EntityManagerInterface
     {
         /** @var EntityManagerInterface $entityManager */
         $entityManager = $this->container->get('doctrine.orm.entity_manager');
 
         return $entityManager;
+    }
+
+    private function address(string $street, string $city, string $postcode, string $country): AddressInterface
+    {
+        /** @var FactoryInterface<AddressInterface> $factory */
+        $factory = $this->container->get('sylius.factory.address');
+        $address = $factory->createNew();
+        $address->setFirstName('Test');
+        $address->setLastName('Address');
+        $address->setStreet($street);
+        $address->setCity($city);
+        $address->setPostcode($postcode);
+        $address->setCountryCode($country);
+        $this->entityManager()->persist($address);
+
+        return $address;
     }
 
     private function connection(): Connection

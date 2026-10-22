@@ -27,6 +27,9 @@ sylius_twig_hooks:
             monthly:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/monthly.html.twig'
                 priority: -20
+            breakdown:
+                template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/breakdown.html.twig'
+                priority: -25
             rankings:
                 template: '@TmonierSyliusCompanyInsightsPlugin/shop/account/company/insights/rankings.html.twig'
                 priority: -30

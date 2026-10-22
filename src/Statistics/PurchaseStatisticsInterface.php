@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Statistics;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 
 /**
@@ -13,12 +14,12 @@ use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 interface PurchaseStatisticsInterface
 {
     /** Orders whose checkout is completed and that are neither cancelled nor waiting for approval. */
-    public function counted(int $companyId, Period $period): PeriodStatistics;
+    public function counted(int $companyId, Period $period, PurchaseFilter $filter = new PurchaseFilter()): PeriodStatistics;
 
     /**
      * Orders waiting for approval (none without tmonier/sylius-purchase-approval-plugin).
      *
      * @return list<CurrencyTotals>
      */
-    public function pending(int $companyId, Period $period): array;
+    public function pending(int $companyId, Period $period, PurchaseFilter $filter = new PurchaseFilter()): array;
 }

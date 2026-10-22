@@ -13,3 +13,10 @@ tmonier_company_insights_shop_ranking:
         ranking: 'buyers|products|categories'
     defaults:
         _controller: tmonier_company_insights.controller.shop.insights::rankingAction
+
+# CSV export of the order lines of the selection (same permission as the dashboard, same filters, 24 months and 50 000 lines at most).
+tmonier_company_insights_shop_export:
+    path: /account/company/insights/export
+    methods: [GET]
+    defaults:
+        _controller: tmonier_company_insights.controller.shop.insights::exportAction

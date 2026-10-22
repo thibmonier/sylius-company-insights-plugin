@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusCompanyInsightsPlugin\Monthly;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 
 /** Monthly aggregates of the orders of ONE company (same rules as the period indicators). */
@@ -16,5 +17,5 @@ interface MonthlyPurchaseStatisticsInterface
      *
      * @return list<MonthlyTotals> `monthIndex` is the position of the month in `$months`
      */
-    public function perMonth(int $companyId, array $months): array;
+    public function perMonth(int $companyId, array $months, PurchaseFilter $filter = new PurchaseFilter()): array;
 }

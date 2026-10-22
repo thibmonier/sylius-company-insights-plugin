@@ -22,9 +22,9 @@ trait RankingQueryTrait
     }
 
     /** The WHERE of the counted orders of the scope; its parameters are given by {@see self::parameters()}. */
-    private function where(): string
+    private function where(RankingScope $scope): string
     {
-        return $this->sql->counted() . ' AND o.checkout_completed_at >= :from AND o.checkout_completed_at < :to AND o.currency_code = :currency';
+        return $this->sql->counted() . ' AND o.checkout_completed_at >= :from AND o.checkout_completed_at < :to AND o.currency_code = :currency' . $scope->filter->sql();
     }
 
     /** @return array<string, int|string> */
@@ -35,6 +35,7 @@ trait RankingQueryTrait
             'from' => CountedOrderSql::storedDate($scope->period->from),
             'to' => CountedOrderSql::storedDate($scope->period->to),
             'currency' => $scope->currencyCode,
+            ...$scope->filter->parameters(),
         ];
     }
 

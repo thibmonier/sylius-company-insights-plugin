@@ -5,8 +5,15 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Tmonier\SyliusCompanyInsightsPlugin\Approval\NoPendingOrderCondition;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\BreakdownProvider;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\DbalOrderSpend;
+use Tmonier\SyliusCompanyInsightsPlugin\Breakdown\DbalSiteBreakdown;
 use Tmonier\SyliusCompanyInsightsPlugin\Controller\Shop\InsightsController;
 use Tmonier\SyliusCompanyInsightsPlugin\Doctrine\CompanyOrderIndexListener;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\CsvExporter;
+use Tmonier\SyliusCompanyInsightsPlugin\Export\DbalExportLines;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\DbalFilterChoices;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\SelectionFactory;
 use Tmonier\SyliusCompanyInsightsPlugin\Indicators\DashboardProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\DbalMonthlyPurchaseStatistics;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyPurchasesProvider;
@@ -73,6 +80,54 @@ return static function (ContainerConfigurator $container): void {
         ])
     ;
 
+    foreach (['sites' => DbalSiteBreakdown::class, 'order_spend' => DbalOrderSpend::class] as $name => $class) {
+        $services->set('tmonier_company_insights.breakdown.' . $name, $class)
+            ->args([
+                service('doctrine.dbal.default_connection'),
+                service('tmonier_company_insights.sql.counted_order'),
+                param('tmonier_company_insights.timezone'),
+            ])
+        ;
+    }
+
+    $services->set('tmonier_company_insights.breakdown_provider', BreakdownProvider::class)
+        ->args([
+            service('tmonier_company_insights.breakdown.sites'),
+            service('tmonier_company_insights.breakdown.order_spend'),
+            tagged_iterator('tmonier_company_insights.order_dimension_provider'),
+            service('logger'),
+        ])
+    ;
+
+    $services->set('tmonier_company_insights.export.lines', DbalExportLines::class)
+        ->args([
+            service('doctrine.dbal.default_connection'),
+            service('tmonier_company_insights.sql.counted_order'),
+            param('tmonier_company_insights.timezone'),
+        ])
+    ;
+
+    $services->set('tmonier_company_insights.export.csv_exporter', CsvExporter::class)
+        ->args([
+            service('tmonier_company_insights.export.lines'),
+            service('translator'),
+            tagged_iterator('tmonier_company_insights.order_dimension_provider'),
+            tagged_iterator('tmonier_company_insights.order_reference_provider'),
+            service('logger'),
+        ])
+    ;
+
+    $services->set('tmonier_company_insights.filter.choices', DbalFilterChoices::class)
+        ->args([service('doctrine.dbal.default_connection')])
+    ;
+
+    $services->set('tmonier_company_insights.filter.selection_factory', SelectionFactory::class)
+        ->args([
+            service('tmonier_company_insights.period_resolver'),
+            service('tmonier_company_insights.filter.choices'),
+        ])
+    ;
+
     $services->set('tmonier_company_insights.dashboard_provider', DashboardProvider::class)
         ->args([
             service('tmonier_company_insights.period_resolver'),
@@ -96,6 +151,10 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_company_insights.monthly_purchases_provider'),
             service('tmonier_company_insights.rankings_provider'),
             service('sylius.context.currency'),
+            service('tmonier_company_insights.filter.selection_factory'),
+            service('tmonier_company_insights.filter.choices'),
+            service('tmonier_company_insights.breakdown_provider'),
+            service('tmonier_company_insights.export.csv_exporter'),
         ])
         ->call('setContainer', [service(\Psr\Container\ContainerInterface::class)])
         ->tag('controller.service_arguments')

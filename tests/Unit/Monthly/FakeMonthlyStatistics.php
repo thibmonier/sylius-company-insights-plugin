@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Tmonier\SyliusCompanyInsightsPlugin\Unit\Monthly;
 
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyPurchaseStatisticsInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyTotals;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
@@ -15,15 +16,18 @@ final class FakeMonthlyStatistics implements MonthlyPurchaseStatisticsInterface
     /** @var list<Period> */
     public array $months = [];
 
+    public ?PurchaseFilter $filter = null;
+
     /** @param list<MonthlyTotals> $totals */
     public function __construct(private readonly array $totals)
     {
     }
 
-    public function perMonth(int $companyId, array $months): array
+    public function perMonth(int $companyId, array $months, PurchaseFilter $filter = new PurchaseFilter()): array
     {
         $this->companyId = $companyId;
         $this->months = $months;
+        $this->filter = $filter;
 
         return $this->totals;
     }

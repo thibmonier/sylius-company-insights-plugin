@@ -31,7 +31,26 @@ final readonly class PeriodResolver
             PeriodKey::Last12Months => $this->calendarMonths($key, $today, $to),
             PeriodKey::CurrentQuarter => $this->sinceStart($key, $this->quarterStart($today), $to, '-3 months'),
             PeriodKey::CurrentYear => $this->sinceStart($key, $today->setDate((int) $today->format('Y'), 1, 1), $to, '-1 year'),
+            PeriodKey::Custom => throw new \LogicException('A custom period is resolved from its dates: use custom().'),
         };
+    }
+
+    /** Whole days, `$lastDay` included, compared with the period of the same duration just before. */
+    public function custom(\DateTimeImmutable $firstDay, \DateTimeImmutable $lastDay): PeriodComparison
+    {
+        $from = $this->localDay($firstDay);
+        $to = $this->localDay($lastDay)->modify('+1 day');
+        $current = new Period($from, $to);
+
+        return new PeriodComparison(PeriodKey::Custom, $current, new Period($from->modify(sprintf('-%d days', $current->days())), $from));
+    }
+
+    /** The calendar day of the date, at midnight in the timezone of the report. */
+    public function localDay(\DateTimeImmutable $day): \DateTimeImmutable
+    {
+        $zone = new \DateTimeZone($this->timezone ?? date_default_timezone_get());
+
+        return new \DateTimeImmutable($day->format('Y-m-d'), $zone);
     }
 
     private function rolling(PeriodKey $key, \DateTimeImmutable $to, string $length): PeriodComparison

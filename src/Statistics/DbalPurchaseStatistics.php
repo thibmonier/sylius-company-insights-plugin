@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusCompanyInsightsPlugin\Statistics;
 
 use Doctrine\DBAL\Connection;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Period\Period;
 use Webmozart\Assert\Assert;
 
@@ -22,10 +23,10 @@ final readonly class DbalPurchaseStatistics implements PurchaseStatisticsInterfa
     ) {
     }
 
-    public function counted(int $companyId, Period $period): PeriodStatistics
+    public function counted(int $companyId, Period $period, PurchaseFilter $filter = new PurchaseFilter()): PeriodStatistics
     {
-        $where = $this->sql->counted() . ' AND ' . self::PERIOD;
-        $parameters = $this->parameters($companyId, $period);
+        $where = $this->sql->counted() . ' AND ' . self::PERIOD . $filter->sql();
+        $parameters = $this->parameters($companyId, $period, $filter);
 
         $totals = [];
         foreach ($this->totalsPerCurrency($where, $parameters) as $row) {
@@ -38,14 +39,14 @@ final readonly class DbalPurchaseStatistics implements PurchaseStatisticsInterfa
         return new PeriodStatistics($totals, (int) $buyers);
     }
 
-    public function pending(int $companyId, Period $period): array
+    public function pending(int $companyId, Period $period, PurchaseFilter $filter = new PurchaseFilter()): array
     {
         $condition = $this->sql->pending();
         if (null === $condition) {
             return [];
         }
 
-        return $this->totalsPerCurrency($condition . ' AND ' . self::PERIOD, $this->parameters($companyId, $period));
+        return $this->totalsPerCurrency($condition . ' AND ' . self::PERIOD . $filter->sql(), $this->parameters($companyId, $period, $filter));
     }
 
     /**
@@ -72,12 +73,13 @@ final readonly class DbalPurchaseStatistics implements PurchaseStatisticsInterfa
     }
 
     /** @return array<string, int|string> */
-    private function parameters(int $companyId, Period $period): array
+    private function parameters(int $companyId, Period $period, PurchaseFilter $filter): array
     {
         return [
             'company' => $companyId,
             'from' => CountedOrderSql::storedDate($period->from),
             'to' => CountedOrderSql::storedDate($period->to),
+            ...$filter->parameters(),
         ];
     }
 }

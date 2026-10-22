@@ -18,7 +18,7 @@ final readonly class DbalBuyerRanking implements BuyerRankingInterface
     public function rows(RankingScope $scope, PageRequest $page): array
     {
         $rows = $this->connection->fetchAllAssociative(
-            sprintf('%s ORDER BY spend DESC, c.id ASC LIMIT %d OFFSET %d', $this->grouped(), $page->perPage, $page->offset()),
+            sprintf('%s ORDER BY spend DESC, c.id ASC LIMIT %d OFFSET %d', $this->grouped($scope), $page->perPage, $page->offset()),
             $this->parameters($scope),
         );
 
@@ -35,16 +35,16 @@ final readonly class DbalBuyerRanking implements BuyerRankingInterface
 
     public function totals(RankingScope $scope): RankingTotals
     {
-        return $this->totalsOf($this->grouped(), $this->parameters($scope));
+        return $this->totalsOf($this->grouped($scope), $this->parameters($scope));
     }
 
-    private function grouped(): string
+    private function grouped(RankingScope $scope): string
     {
         return sprintf(
             'SELECT c.id AS customer_id, c.first_name AS first_name, c.last_name AS last_name, CASE WHEN m.enabled THEN 1 ELSE 0 END AS active, COUNT(o.id) AS orders_count, SUM(%s) AS spend FROM %s LEFT JOIN sylius_customer c ON c.id = o.customer_id LEFT JOIN tmonier_company_member m ON m.customer_id = o.customer_id AND m.company_id = co.company_id WHERE %s GROUP BY c.id, c.first_name, c.last_name, m.enabled',
             $this->sql->netTotal(),
             CountedOrderSql::FROM,
-            $this->where(),
+            $this->where($scope),
         );
     }
 }

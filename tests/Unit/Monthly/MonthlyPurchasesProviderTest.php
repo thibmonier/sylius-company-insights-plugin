@@ -6,6 +6,7 @@ namespace Tests\Tmonier\SyliusCompanyInsightsPlugin\Unit\Monthly;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Clock\MockClock;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyPurchasesProvider;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlySeries;
 use Tmonier\SyliusCompanyInsightsPlugin\Monthly\MonthlyTotals;
@@ -28,6 +29,16 @@ final class MonthlyPurchasesProviderTest extends TestCase
                 self::assertEquals($statistics->months[$index - 1]->to, $month->from, 'The months are contiguous.');
             }
         }
+    }
+
+    public function testTheFilterIsPassedToTheStatistics(): void
+    {
+        $statistics = new FakeMonthlyStatistics([]);
+        $filter = new PurchaseFilter(customerId: 12, addressId: 3);
+
+        $this->provider($statistics)->provide(7, 'EUR', $filter);
+
+        self::assertSame($filter, $statistics->filter);
     }
 
     public function testEveryMonthIsPresentEvenWithoutOrdersAndTheCurrentOneIsMarkedInProgress(): void

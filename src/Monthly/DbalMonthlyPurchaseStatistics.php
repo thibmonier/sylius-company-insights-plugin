@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusCompanyInsightsPlugin\Monthly;
 
 use Doctrine\DBAL\Connection;
+use Tmonier\SyliusCompanyInsightsPlugin\Filter\PurchaseFilter;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Webmozart\Assert\Assert;
 
@@ -21,10 +22,10 @@ final readonly class DbalMonthlyPurchaseStatistics implements MonthlyPurchaseSta
     ) {
     }
 
-    public function perMonth(int $companyId, array $months): array
+    public function perMonth(int $companyId, array $months, PurchaseFilter $filter = new PurchaseFilter()): array
     {
         Assert::notEmpty($months);
-        $parameters = ['company' => $companyId, 'from' => CountedOrderSql::storedDate($months[0]->from), 'to' => CountedOrderSql::storedDate($months[array_key_last($months)]->to)];
+        $parameters = ['company' => $companyId, 'from' => CountedOrderSql::storedDate($months[0]->from), 'to' => CountedOrderSql::storedDate($months[array_key_last($months)]->to), ...$filter->parameters()];
         $cases = '';
         foreach (array_slice($months, 1, null, true) as $index => $month) {
             $cases .= sprintf(' WHEN o.checkout_completed_at < :month%1$d THEN %2$d', $index, $index - 1);
@@ -32,12 +33,13 @@ final readonly class DbalMonthlyPurchaseStatistics implements MonthlyPurchaseSta
         }
 
         $rows = $this->connection->fetchAllAssociative(sprintf(
-            'SELECT o.currency_code AS currency_code, CASE%s ELSE %d END AS month_index, COUNT(o.id) AS orders_count, COALESCE(SUM(%s), 0) AS spend FROM %s WHERE %s AND o.checkout_completed_at >= :from AND o.checkout_completed_at < :to GROUP BY o.currency_code, month_index ORDER BY o.currency_code, month_index',
+            'SELECT o.currency_code AS currency_code, CASE%s ELSE %d END AS month_index, COUNT(o.id) AS orders_count, COALESCE(SUM(%s), 0) AS spend FROM %s WHERE %s AND o.checkout_completed_at >= :from AND o.checkout_completed_at < :to%s GROUP BY o.currency_code, month_index ORDER BY o.currency_code, month_index',
             $cases,
             count($months) - 1,
             $this->sql->netTotal(),
             CountedOrderSql::FROM,
             $this->sql->counted(),
+            $filter->sql(),
         ), $parameters);
 
         return array_map(static function (array $row): MonthlyTotals {
