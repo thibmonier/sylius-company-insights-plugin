@@ -1,8 +1,10 @@
 # Sylius Company Insights Plugin
 
+> English: [README.md](README.md) <!-- vitrine:lang -->
+
 Tableau de bord des achats pour les comptes entreprise B2B de [Sylius](https://sylius.com) 2. L'administrateur d'une entreprise voit, dans l'espace client, combien son entreprise dépense et à quel rythme elle commande : dépense, nombre de commandes, panier moyen et acheteurs actifs de la période choisie, chacun avec sa variation par rapport à la période précédente de même durée, et les commandes en attente d'approbation à part.
 
-Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (entreprises, membres, rôles, commandes de l'entreprise). [English](README.md) | Français
+Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (entreprises, membres, rôles, commandes de l'entreprise).
 
 ## Ce qu'il fait
 
@@ -199,6 +201,17 @@ vendor/bin/phpunit --testsuite non-unit   # nécessite la base de test, voir le 
 ```
 
 Les décisions de conception sont consignées dans [`docs/adr`](docs/adr).
+
+<!-- vitrine:demo-b2b:start -->
+## Démo B2B
+
+Ce plugin est utilisé dans la [démo B2B Sylius](https://github.com/thibmonier/sylius-b2b-demo) : une boutique Sylius 2.3 avec des données d'exemple fictives, où les plugins B2B fonctionnent ensemble. Le code source, l'installation et les fixtures de la démo sont dans ce dépôt.
+
+- Démo en ligne : [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr)
+- Auteur : [Thibaut Monier](https://www.linkedin.com/in/thibautmonier/)
+
+La démo est un exemple, pas une configuration de production.
+<!-- vitrine:demo-b2b:end -->
 
 ## Licence
 
