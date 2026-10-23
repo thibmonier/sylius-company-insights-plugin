@@ -1,8 +1,10 @@
 # Sylius Company Insights Plugin
 
+> Français : [README.fr.md](README.fr.md) <!-- vitrine:lang -->
+
 Purchasing dashboard for [Sylius](https://sylius.com) 2 B2B company accounts. The administrator of a company sees, in the customer account, how much the company spends and how fast it orders: spend, number of orders, average basket and active buyers of the chosen period, each with its variation against the previous period of the same duration, and the orders waiting for approval apart.
 
-Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (companies, members, roles, company orders). English | [Français](README.fr.md)
+Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (companies, members, roles, company orders).
 
 ## What it does
 
@@ -199,6 +201,17 @@ vendor/bin/phpunit --testsuite non-unit   # needs the test database, see the Mak
 ```
 
 Design decisions are recorded in [`docs/adr`](docs/adr).
+
+<!-- vitrine:demo-b2b:start -->
+## B2B demo
+
+This plugin is used in the [Sylius B2B demo](https://github.com/thibmonier/sylius-b2b-demo): a Sylius 2.3 shop with fictitious sample data where the B2B plugins work together. The source code, setup and fixtures of the demo are in that repository.
+
+- Online demo: [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr)
+- Author: [Thibaut Monier](https://www.linkedin.com/in/thibautmonier/)
+
+The demo is an example, not a production setup.
+<!-- vitrine:demo-b2b:end -->
 
 ## License
 
